@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="tg">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Калкулятор ва Сейф</title>
+<!-- Рақами версияи барномаи ту. Ҳар дафъа изменения кунӣ, инҷоро 1.1, 1.2 мемонӣ -->
+<meta name="app-version" content="1.0">
+<style>
+:root{--bg:#000;--key:#2b2b2b;--op:#595959;--acc:#fb9020;--tx:#fff;--mut:#9a9a9a;--line:#333}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+body{display:flex;flex-direction:column;max-width:480px;margin:0 auto;padding:env(safe-area-inset-top,0) 14px env(safe-area-inset-bottom,0)}
+nav{display:flex;gap:8px;padding:12px 0}
+nav button{flex:1;padding:10px 2px;border:0;border-radius:20px;background:#1c1c1c;color:var(--mut);font-size:13px}
+nav button.on{background:var(--op);color:var(--tx)}
+section{display:none;flex:1;flex-direction:column;min-height:0}
+section.on{display:flex}
+.brand{text-align:center;color:var(--mut);font-size:13px;letter-spacing:.5px;padding:2px 0 10px}
+.disp{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:flex-end;padding:8px 8px 16px;overflow:hidden;word-break:break-all}
+.expr{font-size:26px;color:var(--mut);min-height:34px;text-align:right}
+.res{font-size:56px;font-weight:300;text-align:right}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding-bottom:10px}
+.grid button,.pad button{aspect-ratio:1;border:0;border-radius:50%;background:var(--key);color:var(--tx);font-size:30px}
+.grid button:active,.pad button:active{filter:brightness(1.5)}
+.grid .o{background:var(--op)}.grid .e{background:var(--acc)}
+.row{display:flex;align-items:center;gap:10px;padding:14px 0;border-bottom:1px solid var(--line)}
+.row select{background:#1c1c1c;color:var(--tx);border:0;border-radius:10px;padding:10px 6px;font-size:16px;max-width:52%}
+.row .v{flex:1;text-align:right;font-size:28px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--mut)}
+.row.act .v{color:var(--tx);border-right:2px solid var(--acc)}
+.st{font-size:13px;color:var(--mut);padding:12px 4px;text-align:center}
+.st.bad{color:#ff8a80}
+.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:8px 0 8px}
+.pad button{aspect-ratio:1.7;border-radius:40px;font-size:26px}
+.pad .w{background:var(--op);font-size:20px}
+select.cat{width:100%;background:#1c1c1c;color:var(--tx);border:0;border-radius:12px;padding:12px;font-size:16px;margin-bottom:4px}
+.sp{flex:1}
+/* vault */
+#vault{position:fixed;inset:0;background:#0b0b0b;display:none;flex-direction:column;z-index:10;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
+#vault.on{display:flex}
+.vw{max-width:480px;width:100%;margin:0 auto;flex:1;display:flex;flex-direction:column;min-height:0;padding:0 14px}
+.vh{display:flex;align-items:center;justify-content:space-between;padding:14px 0}
+.vh h2{margin:0;font-size:22px;font-weight:500}
+.pill{border:0;border-radius:20px;padding:10px 16px;background:var(--op);color:var(--tx);font-size:15px}
+.pill.a{background:var(--acc);color:#000}.pill.r{background:#7a2a2a}
+.vt{display:flex;gap:8px;margin-bottom:8px}
+.vt button{flex:1;padding:10px;border:0;border-radius:20px;background:#1c1c1c;color:var(--mut);font-size:15px}
+.vt button.on{background:var(--op);color:var(--tx)}
+.vp{display:none;flex:1;overflow:auto;min-height:0}.vp.on{display:block}
+.fi{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--line)}
+.fi .ic{font-size:26px;width:34px;text-align:center}
+.fi .nm{flex:1;min-width:0}.fi .nm b{display:block;font-weight:400;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fi .nm small{color:var(--mut)}
+.fi button{border:0;border-radius:14px;padding:8px 12px;background:#1c1c1c;color:var(--tx);font-size:14px}
+.cats{display:flex;gap:6px;margin-bottom:8px;overflow-x:auto}.cats button{flex:0 0 auto;border:0;border-radius:18px;padding:9px 14px;background:#1c1c1c;color:var(--mut);font-size:14px}.cats button.on{background:var(--acc);color:#000}
+#shield{position:fixed;inset:0;background:#000;z-index:99;display:none;align-items:center;justify-content:center;color:#9a9a9a;font-size:16px}#shield.on{display:flex}
+.nosel,.nosel *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}.nosel input{-webkit-user-select:text;user-select:text}
+.sw{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);font-size:15px;line-height:1.4}.sw input{width:22px;height:22px;margin-top:2px;accent-color:#fb9020;flex:none}
+.dec .rOnly{display:none}.force-only{display:none}.force .force-only{display:block}.force .vt,.force #lock{display:none}
+.top{display:flex;justify-content:flex-end;padding:0 0 4px}.top button{border:0;border-radius:20px;background:#1c1c1c;color:var(--tx);font-size:18px;padding:8px 18px}
+.mode{align-self:flex-start;font-size:15px;color:var(--mut)}
+.sci{display:none;grid-template-columns:repeat(5,1fr);gap:8px;padding-bottom:10px}.sci.on{display:grid}
+.sci button{border:0;border-radius:26px;background:#1c1c1c;color:var(--tx);font-size:18px;padding:12px 0}.sci button.act{background:var(--acc);color:#000}
+#calc.sc .grid button{aspect-ratio:1.5;border-radius:40px;font-size:26px}
+.grid button.fx{font-size:19px}
+#hist{display:none;flex:1;overflow:auto;min-height:0}#calc.h #hist{display:block}#calc.h .disp{display:none}
+.hi{padding:12px 4px;border-bottom:1px solid var(--line);text-align:right}.ha{color:var(--mut);font-size:16px;word-break:break-all}.hb{font-size:28px}
+.src{display:flex;gap:6px;margin-bottom:6px}.src button{flex:1;border:0;border-radius:16px;padding:8px;background:#1c1c1c;color:var(--mut);font-size:14px}.src button.on{background:var(--acc);color:#000}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px}.chips button{flex:0 0 auto;border:0;border-radius:16px;padding:7px 12px;background:#1c1c1c;color:var(--tx);font-size:14px}
+.lb{color:var(--mut);font-size:14px;margin-top:10px}
+.rs{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 4px;border-bottom:1px solid var(--line);text-align:left}.rs b{font-size:20px;font-weight:500;text-align:right;white-space:nowrap}
+.empty{color:var(--mut);text-align:center;padding:40px 10px;line-height:1.5}
+.warn{background:#3a2a10;color:#ffcf8a;border-radius:12px;padding:10px 12px;font-size:13px;margin-bottom:10px}
+.form input{width:100%;background:#1c1c1c;border:0;border-radius:12px;color:var(--tx);font-size:18px;padding:14px;margin:6px 0}
+.msg{min-height:22px;font-size:14px;margin:6px 0}
+#viewer{position:fixed;inset:0;background:#000;z-index:20;display:none;flex-direction:column;align-items:center;justify-content:center;padding:env(safe-area-inset-top,0) 10px 10px}
+#viewer.on{display:flex}
+#viewer .vb{flex:1;display:flex;align-items:center;justify-content:center;width:100%;min-height:0}
+#viewer img,#viewer video{max-width:100%;max-height:100%}
+#viewer audio{width:100%}
+
+/* Огоҳиномаи Навсозӣ (Update Modal) */
+#update-modal {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 9999;
+  display: none; align-items: center; justify-content: center; padding: 20px;
+}
+#update-modal.on { display: flex; }
+.update-box {
+  background: #1c1c1c; border-radius: 20px; padding: 24px; max-width: 320px; width: 100%; text-align: center;
+}
+.update-box h3 { margin-top: 0; font-size: 20px; color: var(--tx); }
+.update-box p { color: var(--mut); font-size: 14px; line-height: 1.4; margin-bottom: 20px; }
+.update-box button { width: 100%; padding: 12px; border: 0; border-radius: 14px; background: var(--acc); color: #000; font-size: 16px; font-weight: 500; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<!-- Огоҳии навсозӣ -->
+<div id="update-modal">
+  <div class="update-box">
+    <h3>Навсозии нав мавҷуд аст! 🚀</h3>
+    <p>Барои кор кардани хусусиятҳои нав, лутфан барномаро навсозӣ кунед.</p>
+    <button id="update-btn">Обновит кардан</button>
+  </div>
+</div>
+
+<nav>
+<button class="on" data-t="calc">Калкулятор</button>
+<button data-t="cur">Асъор</button>
+<button data-t="unit">Воҳидҳо</button>
+<button data-t="work">Корӣ</button>
+</nav>
+
+<section id="calc" class="on">
+<div class="top"><button id="hbtn">🕘</button></div>
+<div id="hist"></div>
+<div class="disp"><div class="mode" id="mode"></div><div class="expr" id="expr"></div><div class="res" id="res">0</div></div>
+<div class="sci" id="sci"></div>
+<div class="grid" id="cg"></div>
+</section>
+
+<section id="cur">
+<div class="src"><button id="sm">Бозор</button><button id="sn">Бонки миллӣ</button></div>
+<div class="chips" id="fav"></div>
+<div class="row" id="r0"><select id="s0"></select><div class="v" id="v0"></div></div>
+<div class="row" id="r1"><select id="s1"></select><div class="v" id="v1"></div></div>
+<div class="row" id="r2"><select id="s2"></select><div class="v" id="v2"></div></div>
+<div class="st" id="cst">Боргирӣ...</div>
+<div class="sp"></div>
+<div class="pad" id="cp"></div>
+</section>
+
+<section id="unit">
+<select class="cat" id="cat"></select>
+<div class="row act" id="u0"><select id="us0"></select><div class="v" id="uv0"></div></div>
+<div class="row" id="u1"><select id="us1"></select><div class="v" id="uv1"></div></div>
+<div class="sp"></div>
+<div class="pad" id="up"></div>
+</section>
+
+<section id="work">
+<select class="cat" id="wsel"></select>
+<div class="form" id="wf"></div>
+<div id="wr"></div>
+<div class="sp"></div>
+<div class="st">Ставкаҳои андоз ва НДС-ро аз қонуни амалкунанда санҷед, онҳо тағйир мешаванд.</div>
+</section>
+
+<div class="brand">Боэътимод Гурух</div>
+
+<div id="shield">Боэътимод Гурух</div>
+<div id="vault"><div class="vw">
+ <div class="vh"><h2>Сейф</h2><button class="pill" id="lock">Қулф кардан</button></div>
+ <div class="vt"><button class="on" data-p="vf">Файлҳо</button><button data-p="vs">Танзимот</button></div>
+ <div class="vp on" id="vf">
+  <div id="vwarn"></div>
+  <div class="cats" id="cats"></div>
+  <button class="pill a" id="addb" style="width:100%;margin-bottom:6px">+ Илова кардани файл</button>
+  <input type="file" id="fin" multiple style="display:none">
+  <div id="flist"></div>
+ </div>
+ <div class="vp" id="vs">
+  <div class="warn force-only">Рамзи аввала (1234) умумӣ аст. Лутфан ҳозир рамзи худатонро муқаррар кунед, баъд сейф кушода мешавад.</div>
+  <h3 style="font-weight:500">Ҳифзи экран</h3>
+  <label class="sw"><input type="checkbox" id="shc"><span>Ҳангоми баромадан аз барнома ё кушодани рӯйхати барномаҳо экран пӯшида мешавад. Нусхабардорӣ ва менюи нигоҳдорӣ манъ мешавад. Ин дар тамоми барнома (калкулятор, асъор, воҳидҳо ва сейф) кор мекунад.</span></label>
+  <p class="st" style="text-align:left">Диққат: браузер скриншоти худи телефонро манъ карда наметавонад. Барои манъи ҳақиқӣ барномаи Android (APK) лозим аст.</p>
+  <h3 style="font-weight:500">Иваз кардани рамз</h3>
+  <div class="form">
+   <input type="password" inputmode="numeric" id="oc" placeholder="Рамзи ҳозира">
+   <input type="password" inputmode="numeric" id="nc" placeholder="Рамзи нав (4–8 рақам)">
+   <input type="password" inputmode="numeric" id="rc" placeholder="Рамзи навро такрор кунед">
+  </div>
+  <div class="msg" id="cm"></div>
+  <button class="pill a" id="chg">Захира кардан</button>
+  <div class="rOnly">
+   <h3 style="font-weight:500;margin-top:26px">Сейфи қалбакӣ</h3>
+   <p class="st" style="text-align:left">Рамзи дуюм сейфи алоҳидаи холиро мекушояд. Агар касе шуморо маҷбур кунад, ин рамзро нишон диҳед. Сейфи аслӣ пинҳон мемонад.</p>
+   <div class="form"><input type="password" inputmode="numeric" id="dc" placeholder="Рамзи сейфи қалбакӣ (4–8 рақам)"></div>
+   <div class="msg" id="dm"></div>
+   <button class="pill" id="dgo">Сохтан ё иваз кардан</button>
+   <h3 style="font-weight:500;margin-top:26px">Нусхаи эҳтиётӣ</h3>
+   <p class="st" style="text-align:left">Файли рамзгузоришуда сохта мешавад. Онро дар ҷои бехатар нигоҳ доред (масалан, Google Drive ё компютер). Барои барқарорсозӣ рамзи он вақтро лозим мешавад.</p>
+   <button class="pill" id="bkb">Нусха сохтан</button>
+   <div class="form"><input type="password" inputmode="numeric" id="bc" placeholder="Рамзи нусха барои барқарорсозӣ"></div>
+   <button class="pill" id="rsb">Аз файл барқарор кардан</button>
+   <input type="file" id="rin" accept=".cvb" style="display:none">
+   <div class="msg" id="bm"></div>
+  </div>
+  <p class="st" style="text-align:left">Сейфро кушодан: дар калкулятор рамзро нависед ва «=» пахш кунед. Рамзи аввала: 1234. Онро ҳатман иваз кунед. Агар рамзро фаромӯш кунед, файлҳоро барқарор кардан мумкин нест.</p>
+  <p class="st" style="text-align:left" id="sinfo"></p>
+ </div>
+</div></div>
+
+<div id="viewer"><div class="vb" id="vbody"></div><button class="pill" id="vclose" style="margin:10px">Пӯшидан</button></div>
+
+<script>
+// --- Санҷиши навсозӣ (Auto-Update Check) ---
+async function checkForUpdates() {
+  try {
+    const response = await fetch(window.location.href + '?t=' + Date.now(), { cache: 'no-store' });
+    const text = await response.text();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(text, 'text/html');
+    const remoteVersion = doc.querySelector('meta[name="app-version"]').getAttribute('content');
+    const localVersion = document.querySelector('meta[name="app-version"]').getAttribute('content');
+    
+    if (remoteVersion !== localVersion) {
+      document.getElementById('update-modal').classList.add('on');
+    }
+  } catch(e) {}
+}
+
+document.getElementById('update-btn').onclick = () => {
+  window.location.reload(true);
+};
+
+// Ҳар боре ки барнома кушода мешавад ё аз фосилаи вақт баргардонида мешавад, версия санҷида мешавад
+setInterval(checkForUpdates, 30000); // Ҳар 30 сония санҷиш меравад
+window.addEventListener('focus', checkForUpdates);
+
+const $=id=>document.getElementById(id);
+const store={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
+
+/* tabs */
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('nav button,section').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');$(b.dataset.t).classList.add('on');
+  if(b.dataset.t==='cur')loadRates();
+});
+
+/* ---------- calculator ---------- */
+let ex='';
+const keys=[['AC','o'],['%','o'],['⌫','o'],['÷','o'],'7','8','9',['×','o'],'4','5','6',['−','o'],'1','2','3',['+','o'],['f(x)','fx'],'0',',',['=','e']];
+keys.forEach(k=>{const [t,c]=Array.isArray(k)?k:[k,''];const b=document.createElement('button');b.textContent=t;b.className=c;b.onclick=()=>press(t);$('cg').appendChild(b)});
+let DEG=false,INV=false;
+const rdz=v=>Math.abs(v)<1e-12?0:v;
+const R2D=v=>DEG?v*180/Math.PI:v,D2R=v=>DEG?v*Math.PI/180:v;
+const FN={
+  SIN:x=>rdz(Math.sin(D2R(x))),COS:x=>rdz(Math.cos(D2R(x))),TAN:x=>rdz(Math.tan(D2R(x))),
+  ASIN:x=>R2D(Math.asin(x)),ACOS:x=>R2D(Math.acos(x)),ATAN:x=>R2D(Math.atan(x)),
+  LOG:Math.log10,LN:Math.log,SQRT:Math.sqrt,
+  FACT:n=>{if(n<0||n>170||n%1)return NaN;let r=1;for(let i=2;i<=n;i++)r*=i;return r}
+};
+function calc(s){
+  let e=s.replace(/×/g,'*').replace(/÷/g,'/').replace(/−/g,'-').replace(/,/g,'.');
+  e=e.replace(/sin⁻¹\(/g,'ASIN(').replace(/cos⁻¹\(/g,'ACOS(').replace(/tan⁻¹\(/g,'ATAN(')
+     .replace(/sin\(/g,'SIN(').replace(/cos\(/g,'COS(').replace(/tan\(/g,'TAN(')
+     .replace(/log\(/g,'LOG(').replace(/ln\(/g,'LN(').replace(/√\(/g,'SQRT(');
+  e=e.replace(/(\d+(\.\d+)?)%/g,'($1/100)').replace(/(\d+)!/g,'FACT($1)').replace(/²/g,'**2').replace(/\^/g,'**');
+  e=e.replace(/(\d|\)|π|e)(?=(ASIN|ACOS|ATAN|SIN|COS|TAN|LOG|LN|SQRT|FACT|π|e|\())/g,'$1*').replace(/\)(?=\d)/g,')*');
+  e=e.replace(/π/g,'3.141592653589793').replace(/e/g,'2.718281828459045');
+  e=e.replace(/(\*\*|[+\-*/.])+$/,'');
+  if(!e)return null;
+  if(/[a-zA-Z]/.test(e.replace(/\b(ASIN|ACOS|ATAN|SIN|COS|TAN|LOG|LN|SQRT|FACT)\b/g,'')))return null;
+  if(!/^[0-9A-Z+\-*/.()\s]+$/.test(e))return null;
+  const open=(e.match(/\(/g)||[]).length-(e.match(/\)/g)||[]).length;e+=')'.repeat(Math.max(open,0));
+  try{const r=Function(...Object.keys(FN),'"use strict";return ('+e+')')(...Object.values(FN));return typeof r==='number'&&isFinite(r)?r:null}catch(x){return null}
+}
+const fmt=n=>String(+n.toPrecision(12)).replace(/e\+?(-?\d+)/,'×10^($1)').replace('.',',');
+async function press(t){
+  if(t==='f(x)'){$('calc').classList.toggle('sc');buildSci();return}
+  if(t==='AC'){ex='';$('res').textContent='0'}
+  else if(t==='⌫')ex=ex.slice(0,-1);
+  else if(t==='='){
+    if(/^\d{4,8}$/.test(ex)){const id=await unlock(ex);if(id){ex='';$('expr').textContent='';$('res').textContent='0';openVault();return}}
+    const r=calc(ex);if(r!==null){if(!/^\d+$/.test(ex)){const l=LK();l.n=0;store.set('lk',l);addH(ex,fmt(r))}ex=fmt(r);$('expr').textContent='';$('res').textContent=ex;return}
+  }
+  else ex+=t;
+  $('expr').textContent=ex;
+  const r=calc(ex);if(t!=='AC')$('res').textContent=r===null?(ex?'':'0'):fmt(r);
+}
+
+const SCI=[['INV','inv'],['DEG','deg'],['x!','!'],['(','('],[')',')'],
+ ['sin','sin(','sin⁻¹('],['cos','cos(','cos⁻¹('],['tan','tan(','tan⁻¹('],['log','log(','10^('],['ln','ln(','e^('],
+ ['x²','²'],['xʸ','^'],['π','π'],['e','e'],['√','√(']];
+const INVL={'sin':'sin⁻¹','cos':'cos⁻¹','tan':'tan⁻¹','log':'10ˣ','ln':'eˣ'};
+function refresh(){const r=calc(ex);$('res').textContent=r===null?(ex?'':'0'):fmt(r)}
+function buildSci(){
+  const on=$('calc').classList.contains('sc');
+  $('sci').classList.toggle('on',on);
+  $('mode').textContent=on?(DEG?'DEG':'RAD'):'';
+  const box=$('sci');box.innerHTML='';
+  SCI.forEach(([l,t,t2])=>{
+    const b=document.createElement('button');
+    if(l==='INV'){b.textContent='INV';b.className=INV?'act':'';b.onclick=()=>{INV=!INV;buildSci()}}
+    else if(l==='DEG'){b.textContent=DEG?'RAD':'DEG';b.onclick=()=>{DEG=!DEG;buildSci();refresh()}}
+    else{b.textContent=INV&&INVL[l]?INVL[l]:l;b.onclick=()=>press(INV&&t2?t2:t)}
+    box.appendChild(b);
+  });
+}
+let H=store.get('hist')||[];
+function addH(a,b){H.unshift([a,b]);H=H.slice(0,40);store.set('hist',H)}
+function renderH(){
+  const h=$('hist');h.innerHTML='';
+  const c=document.createElement('button');c.className='pill';c.textContent='Тоза кардан';c.onclick=()=>{H=[];store.set('hist',H);renderH()};h.appendChild(c);
+  if(!H.length){const d=document.createElement('div');d.className='empty';d.textContent='Таърих холӣ аст.';h.appendChild(d)}
+  H.forEach(([a,b])=>{
+    const d=document.createElement('div');d.className='hi';
+    const x=document.createElement('div');x.className='ha';x.textContent=a;
+    const y=document.createElement('div');y.className='hb';y.textContent='= '+b;
+    d.append(x,y);d.onclick=()=>{ex=b;$('expr').textContent=ex;$('res').textContent=ex;$('calc').classList.remove('h')};
+    h.appendChild(d);
+  });
+}
+$('hbtn').onclick=()=>{$('calc').classList.toggle('h');renderH()};
+buildSci();
+
+function makePad(el,onKey,extra){
+  [...'789456123'].forEach(d=>add(d));add(extra);add('0');add(',');
+  const w=document.createElement('button');w.textContent='AC';w.className='w';w.onclick=()=>onKey('AC');
+  const bk=document.createElement('button');bk.textContent='⌫';bk.className='w';bk.onclick=()=>onKey('⌫');
+  el.appendChild(w);el.appendChild(bk);
+  function add(t){const b=document.createElement('button');b.textContent=t;b.onclick=()=>onKey(t);el.appendChild(b)}
+}
+function edit(s,t){
+  if(t==='AC')return '';
+  if(t==='⌫')return s.slice(0,-1);
+  if(t===','){return s.includes(',')?s:(s||'0')+','}
+  if(s==='0'&&t!=='00')return t;
+  return s.length<15?s+t:s;
+}
+const num=s=>parseFloat((s||'0').replace(',','.'))||0;
+const show=n=>{if(!isFinite(n))return '';const a=Math.abs(n);const d=a>=100?2:a>=1?4:6;return n.toLocaleString('en-US',{maximumFractionDigits:d}).replace(/,/g,' ').replace('.',',')};
+
+/* ---------- currency ---------- */
+let rates=null,cin='100',cact=0;
+const cur=['CNY','TJS','USD'];
+const dn=(()=>{try{return new Intl.DisplayNames(['tg','ru','en'],{type:'currency'})}catch(e){return null}})();
+const nm=c=>{try{return dn?dn.of(c):c}catch(e){return c}};
+function fillCur(){
+  const codes=Object.keys(rates).sort();
+  [0,1,2].forEach(i=>{const s=$('s'+i);const keep=s.value||cur[i];
+    s.innerHTML=codes.map(c=>`<option value="${c}">${c} — ${nm(c)}</option>`).join('');
+    s.value=keep in rates?keep:codes[0];s.onchange=()=>{cur[i]=s.value;store.set('cur',cur);renderCur()};});
+  [0,1,2].forEach(i=>$('r'+i).onclick=()=>{cact=i;cin='';renderCur()});
+}
+function renderCur(){
+  if(!rates)return;
+  const base=num(cin)/rates[cur[cact]];
+  [0,1,2].forEach(i=>{
+    $('r'+i).classList.toggle('act',i===cact);
+    $('v'+i).textContent=i===cact?(cin||'0'):show(base*rates[cur[i]]);
+  });
+}
+let ratesM=null,ratesN=null,SRC=store.get('src')||'m',lastOk=false;
+async function loadNBT(){
+  try{
+    const r=await fetch('https://api.frankfurter.dev/v2/providers/nbt/rates',{cache:'no-store'});
+    const j=await r.json();
+    const arr=Array.isArray(j)?j:(j&&j.rates&&!Array.isArray(j.rates)?Object.entries(j.rates).map(([q,v])=>({base:j.base,quote:q,rate:v,date:j.date})):((j&&j.rates)||[]));
+    const per={TJS:1};let date='';
+    arr.forEach(x=>{const rt=+x.rate;if(!(rt>0))return;date=x.date||date;if(x.base==='TJS')per[x.quote]=rt;else if(x.quote==='TJS')per[x.base]=1/rt});
+    if(Object.keys(per).length<4)throw 0;
+    ratesN=per;store.set('nbt',{r:per,d:date,t:new Date().toLocaleString('ru-RU')});return true;
+  }catch(e){return false}
+}
+function pick(){rates=(SRC==='n'&&ratesN)?ratesN:ratesM;if(rates)init();$('sm').classList.toggle('on',SRC==='m');$('sn').classList.toggle('on',SRC==='n')}
+function setSt(okM,okN){
+  const st=$('cst');st.className='st';
+  if(SRC==='n'){
+    const sn=store.get('nbt');
+    if(ratesN&&okN)st.textContent='Нархи расмии Бонки миллии Тоҷикистон'+(sn&&sn.d?' · сана: '+sn.d:'');
+    else if(ratesN){st.className='st bad';st.textContent='Нав нашуд. Нархи захирашудаи Бонки миллӣ ('+(sn?sn.t:'')+')'}
+    else{st.className='st bad';st.textContent='Нархи Бонки миллӣ дастрас нашуд. Нархи бозор нишон дода мешавад.'}
+  }else{
+    const sm=store.get('rates');
+    if(okM)st.textContent='Нархи бозор · навсозӣ шуд: '+(sm?sm.t:'')+' · '+Object.keys(ratesM).length+' асъор';
+    else if(ratesM){st.className='st bad';st.textContent='Интернет нест. Нархи охирин ('+(sm?sm.t:'')+') нишон дода мешавад.'}
+    else{st.className='st bad';st.textContent='Интернет нест ва нархи захирашуда вуҷуд надорад. Бо интернет кушоед.'}
+  }
+}
+async function loadRates(){
+  const sm=store.get('rates'),sn=store.get('nbt');
+  if(sm&&!ratesM)ratesM=sm.r;if(sn&&!ratesN)ratesN=sn.r;
+  pick();if(rates)$('cst').textContent='Навсозӣ...';
+  let okM=false;
+  try{const r=await fetch('https://open.er-api.com/v6/latest/USD',{cache:'no-store'});const j=await r.json();if(j.result!=='success')throw 0;ratesM=j.rates;store.set('rates',{r:ratesM,t:new Date().toLocaleString('ru-RU')});okM=true}catch(e){}
+  const okN=await loadNBT();
+  lastOk=[okM,okN];pick();setSt(okM,okN);
+}
+$('sm').onclick=()=>{SRC='m';store.set('src',SRC);pick();setSt(...(lastOk||[false,false]))};
+$('sn').onclick=()=>{SRC='n';store.set('src',SRC);pick();setSt(...(lastOk||[false,false]))};
+let FAV=store.get('fav')||['TJS','USD','EUR','RUB','CNY'];
+function renderFav(){
+  const c=$('fav');c.innerHTML='';
+  FAV.forEach(code=>{const b=document.createElement('button');b.textContent=code;b.onclick=()=>{if(!rates||!(code in rates))return;cur[cact]=code;$('s'+cact).value=code;store.set('cur',cur);renderCur()};c.appendChild(b)});
+  const a=document.createElement('button');a.textContent='★ +';a.onclick=()=>{const code=cur[cact];if(!FAV.includes(code)){FAV.push(code);store.set('fav',FAV);renderFav()}};c.appendChild(a);
+  const r=document.createElement('button');r.textContent='↺';r.onclick=()=>{FAV=['TJS','USD','EUR','RUB','CNY'];store.set('fav',FAV);renderFav()};c.appendChild(r);
+}
+renderFav();
+let inited=false;
+function init(){
+  const sv=store.get('cur');if(sv)sv.forEach((c,i)=>cur[i]=c);
+  if(!inited){inited=true;makePad($('cp'),t=>{cin=edit(cin,t);renderCur()},'00')}
+  fillCur();[0,1,2].forEach(i=>$('s'+i).value=cur[i]in rates?cur[i]:'USD');renderCur();
+}
+
+/* ---------- units ---------- */
+const U={
+ 'Дарозӣ':{'мм':.001,'см':.01,'м':1,'км':1000,'дюйм':.0254,'фут':.3048,'мил':1609.344},
+ 'Вазн':{'г':.001,'кг':1,'тонна':1000,'фунт':.45359237,'унсия':.028349523},
+ 'Масоҳат':{'м²':1,'км²':1e6,'га':1e4,'сотих':100,'акр':4046.8564},
+ 'Ҳаҷм':{'мл':.001,'литр':1,'м³':1000,'галлон':3.785411784},
+ 'Ҳарорат':{'°C':0,'°F':0,'K':0}
+};
+let ucat='Дарозӣ',uin='1';
+$('cat').innerHTML=Object.keys(U).map(k=>`<option>${k}</option>`).join('');
+$('cat').onchange=()=>{ucat=$('cat').value;fillU()};
+function fillU(){
+  const o=Object.keys(U[ucat]).map(k=>`<option>${k}</option>`).join('');
+  $('us0').innerHTML=o;$('us1').innerHTML=o;$('us1').selectedIndex=Math.min(2,Object.keys(U[ucat]).length-1);
+  $('us0').onchange=$('us1').onchange=renderU;renderU();
+}
+function conv(v,a,b){
+  if(ucat==='Ҳарорат'){
+    let c=a==='°C'?v:a==='°F'?(v-32)*5/9:v-273.15;
+    return b==='°C'?c:b==='°F'?c*9/5+32:c+273.15;
+  }
+  return v*U[ucat][a]/U[ucat][b];
+}
+function renderU(){
+  $('uv0').textContent=uin||'0';
+  $('uv1').textContent=show(conv(num(uin),$('us0').value,$('us1').value));
+}
+makePad($('up'),t=>{uin=edit(uin,t);renderU()},'00');
+fillU();
+loadRates();
+
+/* ---------- work tools ---------- */
+const WT=[
+ {n:'Фоиз: X% аз Y',f:[['Фоиз (%)','p'],['Адад','y']],c:v=>[['Натиҷа',v.y*v.p/100]]},
+ {n:'Афзоиш ё кам шудан (%)',f:[['Қимати аввал','a'],['Қимати нав','b']],c:v=>v.a?[['Тағйирёбӣ (%)',(v.b-v.a)/v.a*100]]:[]},
+ {n:'Тахфиф',f:[['Нарх','a'],['Тахфиф (%)','p']],c:v=>[['Нархи нав',v.a*(1-v.p/100)],['Сарфа',v.a*v.p/100]]},
+ {n:'Андоз (НДС)',f:[['Маблағ','a'],['Ставка (%)','p']],c:v=>[['Андоз болои маблағ',v.a*v.p/100],['Маблағ бо андоз',v.a*(1+v.p/100)],['Андози дохили маблағ',v.a-v.a/(1+v.p/100)],['Маблағ бе андоз',v.a/(1+v.p/100)]]},
+ {n:'Маош (холис)',f:[['Маоши умумӣ','a'],['Андоз (%)','p'],['Ушри дигар (%)','q']],c:v=>{const d=v.a*(v.p+v.q)/100;return [['Ҷамъи ушр',d],['Маоши холис',v.a-d]]}},
+ {n:'Қарз (пардохти баробар)',f:[['Маблағи қарз','a'],['Фоизи солона (%)','r'],['Мӯҳлат (моҳ)','n']],c:v=>{if(!v.a||!v.n)return [];const r=v.r/1200;const p=r?v.a*r/(1-Math.pow(1+r,-v.n)):v.a/v.n;return [['Пардохти моҳона',p],['Ҷамъи пардохт',p*v.n],['Зиёдатӣ (фоиз)',p*v.n-v.a]]}}
+];
+let wi=0;const TV=store.get('tv')||{};
+const n2=v=>{const x=parseFloat(String(v).replace(/\s/g,'').replace(',','.'));return isNaN(x)?0:x};
+const f2=n=>isFinite(n)?n.toLocaleString('en-US',{maximumFractionDigits:2}).replace(/,/g,' ').replace('.',','):'—';
+$('wsel').innerHTML=WT.map((t,i)=>`<option value="${i}">${t.n}</option>`).join('');
+$('wsel').onchange=()=>{wi=+$('wsel').value;buildW()};
+function buildW(){
+  const t=WT[wi],box=$('wf');box.innerHTML='';
+  t.f.forEach(([l,k])=>{
+    const lb=document.createElement('div');lb.className='lb';lb.textContent=l;
+    const i=document.createElement('input');i.inputMode='decimal';i.id='w_'+k;i.value=TV[t.n+k]||'';
+    i.oninput=()=>{TV[t.n+k]=i.value;store.set('tv',TV);calcW()};
+    box.append(lb,i);
+  });
+  calcW();
+}
+function calcW(){
+  const t=WT[wi],v={};t.f.forEach(([l,k])=>v[k]=n2($('w_'+k).value));
+  const box=$('wr');box.innerHTML='';
+  if(!t.f.some(([l,k])=>$('w_'+k).value.trim()))return;
+  t.c(v).forEach(([l,x])=>{const r=document.createElement('div');r.className='rs';r.innerHTML='<span></span><b></b>';r.children[0].textContent=l;r.children[1].textContent=f2(x);box.appendChild(r)});
+}
+buildW();
+
+/* ---------- vault: code + encryption ---------- */
+const hasC=!!(window.crypto&&crypto.subtle);
+const te=new TextEncoder();
+const b64=a=>btoa(String.fromCharCode(...new Uint8Array(a)));
+const ub64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+let KEY=null,VID='r';
+const MK={r:'vm',d:'vd'};
+const LK=()=>store.get('lk')||{n:0,u:0};
+const bad=()=>{const l=LK();l.n++;if(l.n>=5){l.u=Date.now()+5*60000;l.n=0}store.set('lk',l)};
+async function kdf(code,salt){
+  const m=await crypto.subtle.importKey('raw',te.encode(code),'PBKDF2',false,['deriveKey']);
+  return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:200000,hash:'SHA-256'},m,{name:'AES-GCM',length:256},false,['wrapKey','unwrapKey']);
+}
+async function wrap(code,id,mk){
+  if(!hasC)return store.set(MK[id],{c:code});
+  const salt=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12));
+  const w=await crypto.subtle.wrapKey('raw',mk,await kdf(code,salt),{name:'AES-GCM',iv});
+  return store.set(MK[id],{s:b64(salt),i:b64(iv),w:b64(w)});
+}
+async function setupCode(code,id){
+  id=id||VID;
+  const mk=(id===VID&&KEY)?KEY:(hasC?await crypto.subtle.generateKey({name:'AES-GCM',length:256},true,['encrypt','decrypt']):null);
+  if(!(await wrap(code,id,mk)))return false;
+  if(id===VID)KEY=mk;
+  return true;
+}
+async function tryKey(code,id){
+  const m=store.get(MK[id]);if(!m)return null;
+  if(!hasC||m.c!==undefined)return m.c===code?'x':null;
+  try{return await crypto.subtle.unwrapKey('raw',ub64(m.w),await kdf(code,ub64(m.s)),{name:'AES-GCM',iv:ub64(m.i)},{name:'AES-GCM',length:256},true,['encrypt','decrypt'])}catch(e){return null}
+}
+async function unlock(code){
+  if(!store.get('vm')){KEY=null;VID='r';if(await setupCode('1234','r'))store.set('vdef',true)}
+  if(LK().u>Date.now())return false;
+  for(const id of ['r','d']){
+    const k=await tryKey(code,id);
+    if(k){KEY=hasC?k:null;VID=id;store.set('lk',{n:0,u:0});return id}
+  }
+  bad();return false;
+}
+
+/* ---------- vault: file storage ---------- */
+const dbp=new Promise((res,rej)=>{
+  try{const r=indexedDB.open('cv',1);r.onupgradeneeded=()=>r.result.createObjectStore('f',{keyPath:'id'});r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}catch(e){rej(e)}
+});
+dbp.catch(()=>{});
+async function dbDo(mode,fn){
+  const d=await dbp;
+  return new Promise((res,rej)=>{const t=d.transaction('f',mode);const out=fn(t.objectStore('f'));t.oncomplete=()=>res(out&&out.result);t.onerror=()=>rej(t.error)});
+}
+async function listMeta(){
+  const d=await dbp;
+  return new Promise((res,rej)=>{const a=[];const r=d.transaction('f').objectStore('f').openCursor();
+    r.onsuccess=()=>{const c=r.result;if(c){const v=c.value;a.push({id:v.id,name:v.name,type:v.type,size:v.size,cat:v.cat,v:v.v,t:v.t});c.continue()}else res(a)};
+    r.onerror=()=>rej(r.error)});
+}
+async function addFiles(list){
+  for(const f of list){
+    const buf=await f.arrayBuffer();let data=buf,iv=null;
+    if(hasC){iv=crypto.getRandomValues(new Uint8Array(12));data=await crypto.subtle.encrypt({name:'AES-GCM',iv},KEY,buf)}
+    await dbDo('readwrite',s=>s.put({id:Date.now()+Math.random(),name:f.name,type:f.type,size:f.size,iv,data,cat:CAT,v:VID,t:Date.now()}));
+  }
+  renderFiles();
+}
+async function readFile(id){
+  const v=await dbDo('readonly',s=>s.get(id));
+  const buf=hasC&&v.iv?await crypto.subtle.decrypt({name:'AES-GCM',iv:v.iv},KEY,v.data):v.data;
+  return {v,blob:new Blob([buf],{type:v.type||'application/octet-stream'})};
+}
+const sz=n=>n>1e6?(n/1e6).toFixed(1)+' МБ':Math.max(1,Math.round(n/1e3))+' КБ';
+const icon=t=>t.startsWith('image/')?'🖼':t.startsWith('video/')?'🎞':t.startsWith('audio/')?'🎵':t==='application/pdf'?'📄':'📁';
+async function renderFiles(){
+  const box=$('flist');box.innerHTML='';
+  let items=[];
+  try{items=await listMeta()}catch(e){box.innerHTML='<div class="empty">Нигоҳдорӣ дар ин браузер кор намекунад.</div>';return}
+  items=items.filter(i=>(i.v||'r')===VID&&(i.cat||guess(i.type||''))===CAT);
+  if(!items.length){box.innerHTML='<div class="empty">Дар ин бахш ҳоло файл нест.<br>Бо тугмаи «Илова кардани файл» илова кунед.</div>';return}
+  items.sort((a,b)=>b.t-a.t).forEach(it=>{
+    const r=document.createElement('div');r.className='fi';
+    r.innerHTML='<div class="ic"></div><div class="nm"><b></b><small></small></div>';
+    r.querySelector('.ic').textContent=icon(it.type||'');
+    r.querySelector('b').textContent=it.name;
+    r.querySelector('small').textContent=sz(it.size);
+    const o=document.createElement('button');o.textContent='Кушодан';o.onclick=()=>viewFile(it.id);
+    const d=document.createElement('button');d.textContent='🗑';d.onclick=async()=>{if(confirm('Ин файл аз сейф нест карда шавад?')){await dbDo('readwrite',s=>s.delete(it.id));renderFiles()}};
+    r.appendChild(o);r.appendChild(d);box.appendChild(r);
+  });
+}
+let vurl=null;
+async function viewFile(id){
+  try{
+    const {v,blob}=await readFile(id);
+    vurl=URL.createObjectURL(blob);const t=v.type||'';const b=$('vbody');b.innerHTML='';
+    let el;
+    if(t.startsWith('image/')){el=document.createElement('img')}
+    else if(t.startsWith('video/')){el=document.createElement('video');el.controls=true;el.playsInline=true}
+    else if(t.startsWith('audio/')){el=document.createElement('audio');el.controls=true}
+    else{el=document.createElement('a');el.className='pill a';el.textContent='Зеркашӣ: '+v.name;el.download=v.name}
+    if(el.tagName==='A')el.href=vurl;else el.src=vurl;
+    b.appendChild(el);$('viewer').classList.add('on');
+  }catch(e){alert('Кушодан нашуд.')}
+}
+$('vclose').onclick=closeViewer;
+function closeViewer(){$('viewer').classList.remove('on');$('vbody').innerHTML='';if(vurl){URL.revokeObjectURL(vurl);vurl=null}}
+
+/* ---------- vault: open / lock / settings ---------- */
+function showPanel(id){document.querySelectorAll('.vt button,.vp').forEach(x=>x.classList.remove('on'));document.querySelector('.vt button[data-p="'+id+'"]').classList.add('on');$(id).classList.add('on')}
+function openVault(){
+  $('vault').classList.add('on');
+  $('vault').classList.toggle('dec',VID==='d');
+  const force=VID==='r'&&!!store.get('vdef');
+  $('vault').classList.toggle('force',force);showPanel(force?'vs':'vf');
+  $('vwarn').innerHTML=hasC?'':'<div class="warn">Дар ин ҳолат браузер рамзгузориро дастгирӣ намекунад, файлҳо бе рамзгузорӣ нигоҳ дошта мешаванд. Файлро аз «Файлҳо» ё сайти худатон кушоед.</div>';
+  $('sinfo').textContent=hasC?'Файлҳо бо рамзгузории AES-256 дар худи телефон нигоҳ дошта мешаванд.ভ':'Рамзгузорӣ дар ин ҳолат фаъол нест.';
+  if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
+  buildCats();testStore();
+  renderFiles();
+}
+function lockVault(){closeViewer();$('vault').classList.remove('on');KEY=null;['oc','nc','rc'].forEach(i=>$(i).value='');$('cm').textContent=''}
+$('lock').onclick=lockVault;
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&$('vault').classList.contains('on'))lockVault()});
+document.querySelectorAll('.vt button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.vt button,.vp').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');$(b.dataset.p).classList.add('on');
+});
+const CATS=[['img','🖼 Сурат','image/*'],['vid','🎞 Видео','video/*'],['aud','🎵 Мусиқӣ ва овоз','audio/*'],['app','📦 Барнома','.apk,.xapk,.exe,.msi,.zip,.rar,.7z'],['doc','📄 Ҳуҷҷат','']];
+let CAT='img';
+const guess=t=>t.startsWith('image/')?'img':t.startsWith('video/')?'vid':t.startsWith('audio/')?'aud':'doc';
+function buildCats(){
+  const c=$('cats');c.innerHTML='';
+  CATS.forEach(([k,n])=>{const b=document.createElement('button');b.textContent=n;b.className=k===CAT?'on':'';b.onclick=()=>{CAT=k;buildCats();renderFiles()};c.appendChild(b)});
+}
+async function testStore(){
+  try{await dbp;await listMeta()}catch(e){$('vwarn').innerHTML+='<div class="warn" style="background:#4a1a1a;color:#ffb4ab">Нигоҳдорӣ дар ин ҳолат кор намекунад ва файлҳо захира намешаванд. Файлро аз суроғаи доимӣ (сайт) кушоед, на аз «content://».</div>'}
+}
+$('addb').onclick=()=>{const a=CATS.find(c=>c[0]===CAT)[2];if(a)$('fin').setAttribute('accept',a);else $('fin').removeAttribute('accept');$('fin').click()};
+$('fin').onchange=async()=>{const l=[...$('fin').files];$('fin').value='';try{await addFiles(l)}catch(e){alert('Захира нашуд: '+(e&&e.message?e.message:e)+'\n\nАгар файл аз «content://» кушода шуда бошад, браузер нигоҳдориро манъ мекунад.')}};
+$('chg').onclick=async()=>{
+  const m=$('cm');m.style.color='#ff8a80';
+  const o=$('oc').value,n=$('nc').value,r=$('rc').value;
+  if(!(await tryKey(o,VID))){m.textContent='Рамзи ҳозира нодуруст аст.';return}
+  if(!/^\d{4,8}$/.test(n)){m.textContent='Рамзи нав бояд 4 то 8 рақам бошад.';return}
+  if(n!==r){m.textContent='Рамзи нав ва такрор мувофиқ нестанд.';return}
+  if(n===o){m.textContent='Рамзи нав бояд аз рамзи ҳозира фарқ кунад.';return}
+  if(/^(\d)\1+$/.test(n)||['1234','4321','123456','12345678','1212'].includes(n)){m.textContent='Рамзи хеле осон аст. Рамзи мураккабтар интихоб кунед.';return}
+  if(await tryKey(n,VID==='r'?'d':'r')){m.textContent='Рамзи дигар интихоб кунед.';return}
+  if(await setupCode(n,VID)){
+    if(VID==='r'&&store.get('vdef')){store.set('vdef',false);$('vault').classList.remove('force');showPanel('vf')}
+    m.style.color='#8be28b';m.textContent='Рамз иваз шуд.';['oc','nc','rc'].forEach(i=>$(i).value='');
+  }else m.textContent='Захира нашуд. Нигоҳдории браузер кор намекунад.';
+};
+
+/* ---------- decoy vault ---------- */
+async function purge(id){
+  const d=await dbp;
+  return new Promise((res,rej)=>{const t=d.transaction('f','readwrite');const r=t.objectStore('f').openCursor();
+    r.onsuccess=()=>{const c=r.result;if(c){if((c.value.v||'r')===id)c.delete();c.continue()}};
+    t.oncomplete=()=>res();t.onerror=()=>rej(t.error)});
+}
+$('dgo').onclick=async()=>{
+  const m=$('dm');m.style.color='#ff8a80';const n=$('dc').value;
+  if(!/^\d{4,8}$/.test(n)){m.textContent='Рамз бояд 4 то 8 рақам бошад.';return}
+  if(await tryKey(n,'r')){m.textContent='Рамзи дигар интихоб кунед.';return}
+  if(store.get('vd')){if(!confirm('Сейфи қалбакии пешина бо файлҳояш нест карда мешавад. Давом диҳем?'))return;await purge('d')}
+  if(await setupCode(n,'d')){m.style.color='#8be28b';m.textContent='Сейфи қалбакӣ омода шуд.';$('dc').value=''}
+  else m.textContent='Захира нашуд.';
+};
+
+/* ---------- backup ---------- */
+async function allFull(){
+  const d=await dbp;
+  return new Promise((res,rej)=>{const a=[];const r=d.transaction('f').objectStore('f').openCursor();
+    r.onsuccess=()=>{const c=r.result;if(c){if((c.value.v||'r')===VID)a.push(c.value);c.continue()}else res(a)};
+    r.onerror=()=>rej(r.error)});
+}
+async function backup(){
+  if(!hasC)throw new Error('рамзгузорӣ дастрас нест');
+  const fs=await allFull();if(!fs.length)throw new Error('сейф холӣ аст');
+  const hd={v:1,m:store.get(MK[VID]),f:fs.map(f=>({n:f.name,t:f.type,s:f.size,c:f.cat,i:b64(f.iv),l:f.data.byteLength}))};
+  const h=te.encode(JSON.stringify(hd));const len=new Uint8Array(4);new DataView(len.buffer).setUint32(0,h.length);
+  const blob=new Blob([len,h,...fs.map(f=>f.data)],{type:'application/octet-stream'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='seyf-'+new Date().toISOString().slice(0,10)+'.cvb';
+  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),10000);
+}
+async function restore(file,code){
+  if(!hasC)throw new Error('no crypto');
+  const ab=await file.arrayBuffer();const hl=new DataView(ab).getUint32(0);
+  const hd=JSON.parse(new TextDecoder().decode(ab.slice(4,4+hl)));const m=hd.m;
+  const BK=await crypto.subtle.unwrapKey('raw',ub64(m.w),await kdf(code,ub64(m.s)),{name:'AES-GCM',iv:ub64(m.i)},{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+  let off=4+hl,n=0;
+  for(const f of hd.f){
+    const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:ub64(f.i)},BK,ab.slice(off,off+f.l));off+=f.l;
+    const iv=crypto.getRandomValues(new Uint8Array(12));
+    const data=await crypto.subtle.encrypt({name:'AES-GCM',iv},KEY,pt);
+    await dbDo('readwrite',s=>s.put({id:Date.now()+Math.random(),name:f.n,type:f.t,size:f.s,iv,data,cat:f.c,v:VID,t:Date.now()}));n++;
+  }
+  return n;
+}
+$('bkb').onclick=async()=>{const m=$('bm');m.style.color='#ff8a80';try{await backup();m.style.color='#8be28b';m.textContent='Файли нусха зеркашӣ шуд.'}catch(e){m.textContent='Нусха нашуд: '+(e.message||e)}};
+$('rsb').onclick=()=>{const m=$('bm');m.style.color='#ff8a80';if(!$('bc').value){m.textContent='Аввал рамзи нусхаро нависед.';return}$('rin').click()};
+$('rin').onchange=async()=>{
+  const f=$('rin').files[0];$('rin').value='';if(!f)return;const m=$('bm');m.style.color='#ff8a80';
+  try{const n=await restore(f,$('bc').value);m.style.color='#8be28b';m.textContent=n+' файл барқарор шуд.';$('bc').value='';renderFiles()}
+  catch(e){m.textContent='Барқарор нашуд: рамз ё файл нодуруст аст.'}
+};
+
+/* ---------- screen shield ---------- */
+let SH=store.get('shield')!==false;
+const applyShield=()=>document.body.classList.toggle('nosel',SH);
+const cov=on=>$('shield').classList.toggle('on',SH&&on);
+applyShield();
+$('shc').checked=SH;
+$('shc').onchange=()=>{SH=$('shc').checked;store.set('shield',SH);applyShield();cov(false)};
+document.addEventListener('visibilitychange',()=>cov(document.hidden));
+window.addEventListener('blur',()=>cov(true));
+window.addEventListener('focus',()=>cov(false));
+window.addEventListener('pageshow',()=>cov(false));
+document.addEventListener('contextmenu',e=>{if(SH)e.preventDefault()});
+</script>
+</body>
+</html>
