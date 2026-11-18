@@ -108,6 +108,14 @@ function exportMedia(fileDataUrl, fileName) {
     document.body.removeChild(a);
     alert("Файл бомуваффақият ба телефон зеркашӣ шуд!");
 }
+<script>
+  // Дигар функцияҳои пештараи шумо...
+
+  function toggleReleaseNotes() {
+    const modal = document.getElementById('notes-modal');
+    modal.style.display = modal.style.display === 'none' ? 'block' : 'none';
+    document.getElementById('badge').style.display = 'none';
+  }
 </script>
   <body>
 <div style="position: absolute; top: 15px; right: 15px; cursor: pointer; z-index: 999;" onclick="toggleReleaseNotes()">
