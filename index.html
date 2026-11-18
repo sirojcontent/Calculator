@@ -98,6 +98,16 @@ select.cat{width:100%;background:#1c1c1c;color:var(--tx);border:0;border-radius:
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js');
   }
+// Функсияи бровардани файл аз сейф ба галерея
+function exportMedia(fileDataUrl, fileName) {
+    const a = document.createElement('a');
+    a.href = fileDataUrl;
+    a.download = fileName || "vault_file";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    alert("Файл бомуваффақият ба телефон зеркашӣ шуд!");
+}
 </script>
   <body>
 
@@ -197,8 +207,11 @@ select.cat{width:100%;background:#1c1c1c;color:var(--tx);border:0;border-radius:
  </div>
 </div></div>
 
-<div id="viewer"><div class="vb" id="vbody"></div><button class="pill" id="vclose" style="margin:10px">Пӯшидан</button></div>
-
+<div id="viewer">
+  <div class="vb" id="vbody"></div>
+  <button class="pill" id="vexport" style="margin:10px; background:#28a745; color:#fff;">Бровардан</button>
+  <button class="pill" id="vclose" style="margin:10px">Пӯшидан</button>
+</div>
 <script>
 // --- Санҷиши навсозӣ (Auto-Update Check) ---
 async function checkForUpdates() {
