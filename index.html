@@ -206,10 +206,9 @@ function exportMedia(fileDataUrl, fileName) {
   <p class="st" style="text-align:left" id="sinfo"></p>
  </div>
 </div></div>
-
 <div id="viewer">
   <div class="vb" id="vbody"></div>
-  <button class="pill" id="vexport" style="margin:10px; background:#28a745; color:#fff;">Бровардан</button>
+  <button class="pill" id="vexport" style="margin:10px; background:#28a745; color:#fff;" onclick="exportMedia(document.querySelector('#vbody img, #vbody video')?.src, 'vault_media')">Бровардан</button>
   <button class="pill" id="vclose" style="margin:10px">Пӯшидан</button>
 </div>
 <script>
