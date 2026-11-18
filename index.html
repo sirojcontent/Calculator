@@ -92,8 +92,14 @@ select.cat{width:100%;background:#1c1c1c;color:var(--tx);border:0;border-radius:
 .update-box p { color: var(--mut); font-size: 14px; line-height: 1.4; margin-bottom: 20px; }
 .update-box button { width: 100%; padding: 12px; border: 0; border-radius: 14px; background: var(--acc); color: #000; font-size: 16px; font-weight: 500; cursor: pointer; }
 </style>
+<link rel="manifest" href="manifest.json">
 </head>
-<body>
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js');
+  }
+</script>
+  <body>
 
 <!-- Огоҳии навсозӣ -->
 <div id="update-modal">
