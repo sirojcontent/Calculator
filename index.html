@@ -692,7 +692,7 @@ const applyShield=()=>document.body.classList.toggle('nosel',SH);
 const cov=on=>$('shield').classList.toggle('on',SH&&on);
 applyShield();
 $('shc').checked=SH;
-$('shc').onchange=()=>{SH=$('shc').checked;store.set('shield',SH);applyShield();cov(false)};
+$('shc').onchange=()=>{SH=$('shc'].checked;store.set('shield',SH);applyShield();cov(false)};
 document.addEventListener('visibilitychange',()=>cov(document.hidden));
 window.addEventListener('blur',()=>cov(true));
 window.addEventListener('focus',()=>cov(false));
