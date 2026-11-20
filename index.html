@@ -34,10 +34,6 @@ section.on{display:flex}
 .pad .w{background:var(--op);font-size:20px}
 select.cat{width:100%;background:#1c1c1c;color:var(--tx);border:0;border-radius:12px;padding:12px;font-size:16px;margin-bottom:4px}
 .sp{flex:1}
-/* Замонавӣ */
-button{transition:transform 0.1s, filter 0.2s !important;}
-button:active{transform:scale(0.95);filter:brightness(1.2);}
-.modern-card{background:#1c1c1c;border-radius:20px;padding:15px;margin:10px 0;color:#fff;text-align:center;border:1px solid #333;}
 /* vault */
 #vault{position:fixed;inset:0;background:#0b0b0b;display:none;flex-direction:column;z-index:10;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
 #vault.on{display:flex}
@@ -98,7 +94,6 @@ button:active{transform:scale(0.95);filter:brightness(1.2);}
 </nav>
 
 <section id="calc" class="on">
-<div class="modern-card"></div>
 <div class="top"><button id="nbtn" aria-label="Навсозиҳо">🔔<span id="badge"></span></button><button id="hbtn" aria-label="Таърих">🕘</button></div>
 <div id="hist"></div>
 <div class="disp"><div class="mode" id="mode"></div><div class="expr" id="expr"></div><div class="res" id="res">0</div></div>
