@@ -546,11 +546,19 @@ function openVault(){
   $('sinfo').textContent=hasC?'Файлҳо бо рамзгузории AES-256 дар худи телефон нигоҳ дошта мешаванд.':'Рамзгузорӣ дар ин ҳолат фаъол нест.';
   if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
   buildCats();testStore();
-  renderFiles();
-}
-function lockVault(){closeViewer();cleanExport();$('vault').classList.remove('on');KEY=null;['oc','nc','rc'].forEach(i=>$(i).value='');$('cm').textContent=''}
+renderFiles();resetIdle();}
+function lockVault(){clearTimeout(idleT);closeViewer();cleanExport();...$('vault').classList.remove('on');KEY=null;['oc','nc','rc'].forEach(i=>$(i).value='');$('cm').textContent=''}
 $('lock').onclick=lockVault;
-document.addEventListener('visibilitychange',()=>{if(document.hidden&&$('vault').classList.contains('on'))lockVault()});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&$('vault').classList.contains('on'))lockVault()});let idleT=null;
+let idleT=null;
+function resetIdle(){
+clearTimeout(idleT);
+if($('vault').classList.contains('on')){
+idleT=setTimeout(()=>{if($('vault').classList.contains('on'))lockVault()},90000);
+}
+}
+['click','touchstart','input','scroll'].forEach(ev=>document.addEventListener(ev,resetIdle,{passive:true}));
+ 
 document.querySelectorAll('.vt button').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('.vt button,.vp').forEach(x=>x.classList.remove('on'));
   b.classList.add('on');$(b.dataset.p).classList.add('on');
