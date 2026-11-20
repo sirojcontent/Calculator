@@ -549,7 +549,7 @@ function openVault(){
 renderFiles();resetIdle();}
 function lockVault(){clearTimeout(idleT);closeViewer();cleanExport();...$('vault').classList.remove('on');KEY=null;['oc','nc','rc'].forEach(i=>$(i).value='');$('cm').textContent=''}
 $('lock').onclick=lockVault;
-document.addEventListener('visibilitychange',()=>{if(document.hidden&&$('vault').classList.contains('on'))lockVault()});let idleT=null;
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&$('vault').classList.contains('on'))lockVault()});
 let idleT=null;
 function resetIdle(){
 clearTimeout(idleT);
