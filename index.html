@@ -815,5 +815,245 @@ document.addEventListener('contextmenu',e=>{if(SH)e.preventDefault()});
     <div id="subMsg" style="margin-top:10px;font-size:13px;min-height:18px;color:#fbbf24;"></div>
   </div>
 </div>
+<script>
+(function () {
+  const SUB_KEY = 'calc_sub_v1';
+  const DAY_MS = 24 * 60 * 60 * 1000;
+  const YEAR_MS = 365 * DAY_MS;
+
+  const VALID_CODES = new Set([
+    'SUB365-10S-VIP',
+    'CALC365-OK-2026',
+    'PAY10-YEAR-365'
+  ]);
+
+  let defaultInfoHtml = '';
+
+  function loadSub() {
+    const now = Date.now();
+    let data = null;
+    try {
+      data = JSON.parse(localStorage.getItem(SUB_KEY) || 'null');
+    } catch (_) {}
+
+    if (!data || typeof data !== 'object') {
+      data = { activeUntil: 0, lastSeen: now, visitLogs: [] };
+    }
+
+    if (typeof data.lastSeen === 'number' && now < data.lastSeen - 5 * 60 * 1000) {
+      data.clockTampered = true;
+    }
+    data.lastSeen = Math.max(data.lastSeen || now, now);
+    saveSub(data);
+    return data;
+  }
+
+  function saveSub(data) {
+    try {
+      localStorage.setItem(SUB_KEY, JSON.stringify(data));
+    } catch (_) {}
+  }
+
+  function recordVaultVisit(label) {
+    const data = loadSub();
+    data.visitLogs = Array.isArray(data.visitLogs) ? data.visitLogs : [];
+    data.visitLogs.unshift({
+      at: new Date().toLocaleString('tg-TJ'),
+      note: label || 'Вуруд ба сейф'
+    });
+    if (data.visitLogs.length > 50) data.visitLogs.length = 50;
+    saveSub(data);
+    return data;
+  }
+
+  function getSubStatus() {
+    const data = loadSub();
+    const now = Date.now();
+    if (!data.activeUntil || data.activeUntil <= 0) {
+      return { state: 'unpaid', daysLeft: 0, daysElapsed: 0, data };
+    }
+
+    const remainingMs = data.activeUntil - now;
+    const daysLeft = Math.ceil(remainingMs / DAY_MS);
+    const daysElapsed = 365 - daysLeft;
+
+    if (remainingMs > 5 * DAY_MS) {
+      return { state: 'active', daysLeft, daysElapsed, data };
+    }
+    if (remainingMs > 0 && daysLeft <= 5) {
+      return { state: 'expiring_soon', daysLeft, daysElapsed, data };
+    }
+    const overdueDays = Math.max(1, Math.ceil((now - data.activeUntil) / DAY_MS));
+    return { state: 'expired', daysLeft: 0, overdueDays, data };
+  }
+
+  function openSubModal(mode, statusInfo) {
+    const modal = document.getElementById('subModal');
+    const title = document.getElementById('subModalTitle');
+    const infoBox = document.getElementById('subInfoBox');
+    const logsBox = document.getElementById('subLogsBox');
+    const msg = document.getElementById('subMsg');
+    if (!modal || !infoBox) return;
+
+    if (!defaultInfoHtml) {
+      defaultInfoHtml = infoBox.innerHTML;
+    }
+
+    msg.textContent = '';
+    logsBox.style.display = 'none';
+
+    if (mode === 'reminder' && statusInfo) {
+      const d = statusInfo.daysLeft;
+      title.textContent = d > 0
+        ? `Огоҳӣ: ${d} рӯзи дигар мондааст`
+        : `Огоҳӣ: мӯҳлати 365 рӯз ба охир расид (рӯзи ${365 + (statusInfo.overdueDays || 1)})`;
+
+      const noteHtml = d > 0
+        ? `<div style="background:#2a2112;border:1px solid #854d0e;border-radius:10px;padding:10px;margin-bottom:10px;font-size:13px;line-height:1.5;">
+             <b>${d} рӯзи дигар мондааст!</b> Пешпардохт кунед (<b>10 сомонӣ</b>), то сейф аз кор набарояд ва 365 рӯзи дигар зам шавад.
+           </div>`
+        : `<div style="background:#2a1414;border:1px solid #991b1b;border-radius:10px;padding:10px;margin-bottom:10px;font-size:13px;line-height:1.5;">
+             Мӯҳлати 365 рӯз тамом шуд. <b>Маълумоти шумо безарар ва баста мемонад</b>, тамошои файлҳо кор мекунад, аммо <b>баровардан (экспорт)</b> пас аз пардохти 10 сомонӣ фаъол мешавад.
+           </div>`;
+
+      infoBox.innerHTML = noteHtml + defaultInfoHtml;
+
+      if (Array.isArray(statusInfo.data.visitLogs) && statusInfo.data.visitLogs.length) {
+        logsBox.style.display = 'block';
+        logsBox.innerHTML = '<b>Вақтҳои даромадан ба сейф:</b><br>' +
+          statusInfo.data.visitLogs.slice(0, 8).map(v => `• ${v.at} — ${v.note}`).join('<br>');
+      }
+    } else {
+      title.textContent = 'Обунаи солонаи Сейф — 10 сомонӣ';
+      infoBox.innerHTML = defaultInfoHtml;
+    }
+
+    modal.style.display = 'flex';
+  }
+
+  function applyVaultRestrictions() {
+    const st = getSubStatus();
+    const canExport = (st.state === 'active' || st.state === 'expiring_soon') && !st.data.clockTampered;
+
+    document.querySelectorAll('button, a').forEach(el => {
+      if (el.closest('#subModal')) return;
+      const txt = (el.textContent || '').trim();
+      if (/бровардан|экспорт|export|download/i.test(txt)) {
+        if (!canExport) {
+          el.dataset.lockedBySub = '1';
+          el.style.opacity = '0.45';
+          el.title = 'Барои баровардани файл обунаи 10-сомонаро фаъол кунед';
+        } else if (el.dataset.lockedBySub === '1') {
+          delete el.dataset.lockedBySub;
+          el.style.opacity = '';
+          el.title = '';
+        }
+      }
+    });
+  }
+
+  document.addEventListener('click', function (e) {
+    const target = e.target.closest('button, a');
+    if (!target) return;
+
+    if (target.id === 'copyAccBtn') {
+      navigator.clipboard?.writeText('100000580').catch(() => {});
+      target.textContent = 'Нусха шуд ✓';
+      setTimeout(() => { target.textContent = 'Нусха'; }, 1500);
+      return;
+    }
+
+    if (target.id === 'subCloseBtn') {
+      document.getElementById('subModal').style.display = 'none';
+      return;
+    }
+
+    if (target.id === 'subActivateBtn') {
+      const codeInput = document.getElementById('subCodeInput');
+      const msg = document.getElementById('subMsg');
+      const waitBox = document.getElementById('subWaitBox');
+      const countdownEl = document.getElementById('subCountdown');
+      const code = (codeInput.value || '').trim().toUpperCase();
+
+      if (!VALID_CODES.has(code)) {
+        msg.textContent = 'Рамз нодуруст аст. Чекро фиристода, рамзи дуруст гиред.';
+        return;
+      }
+
+      msg.textContent = '';
+      target.disabled = true;
+      waitBox.style.display = 'block';
+
+      let sec = 60;
+      countdownEl.textContent = sec + ' сония';
+
+      const timer = setInterval(() => {
+        sec -= 1;
+        countdownEl.textContent = sec + ' сония';
+        if (sec <= 0) {
+          clearInterval(timer);
+          const current = loadSub();
+          const now = Date.now();
+          const baseTime = current.activeUntil && current.activeUntil > now ? current.activeUntil : now;
+          current.activeUntil = baseTime + YEAR_MS;
+          current.clockTampered = false;
+          current.visitLogs = current.visitLogs || [];
+          current.visitLogs.unshift({
+            at: new Date().toLocaleString('tg-TJ'),
+            note: 'Обунаи 365-рӯза фаъол/навсозӣ шуд'
+          });
+          saveSub(current);
+
+          waitBox.style.display = 'none';
+          target.disabled = false;
+          codeInput.value = '';
+          document.getElementById('subModal').style.display = 'none';
+          applyVaultRestrictions();
+        }
+      }, 1000);
+      return;
+    }
+
+    if (!target.closest('#subModal')) {
+      const txt = (target.textContent || '').trim();
+      if (/бровардан|экспорт|export/i.test(txt)) {
+        const st = getSubStatus();
+        const canExport = (st.state === 'active' || st.state === 'expiring_soon') && !st.data.clockTampered;
+        if (!canExport) {
+          e.preventDefault();
+          e.stopPropagation();
+          openSubModal('paywall', st);
+        }
+      }
+    }
+  }, true);
+
+  document.addEventListener('input', function (e) {
+    if (e.target && e.target.value && e.target.value.trim() === '1234') {
+      const st = getSubStatus();
+      recordVaultVisit('Рамзи 1234 ворид шуд');
+      applyVaultRestrictions();
+
+      if (st.state === 'expiring_soon' || (st.state === 'expired' && st.overdueDays === 1)) {
+        setTimeout(() => openSubModal('reminder', getSubStatus()), 250);
+      } else if (st.state === 'unpaid' || st.state === 'expired') {
+        setTimeout(() => openSubModal('paywall', st), 250);
+      }
+    }
+  });
+
+  window.addEventListener('DOMContentLoaded', () => {
+    const infoBox = document.getElementById('subInfoBox');
+    if (infoBox && !defaultInfoHtml) {
+      defaultInfoHtml = infoBox.innerHTML;
+    }
+    const st = getSubStatus();
+    applyVaultRestrictions();
+    if (st.state === 'expiring_soon') {
+      openSubModal('reminder', st);
+    }
+  });
+})();
+</script>
  </body>
 </html>
