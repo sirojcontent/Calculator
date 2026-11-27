@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="1.0">
+<meta name="app-version" content="1.1">
 <title>Калкулятор</title>
 <style>
 :root{--bg:#000;--key:#2b2b2b;--op:#595959;--acc:#fb9020;--tx:#fff;--mut:#9a9a9a;--line:#333}
@@ -90,7 +90,7 @@ select.cat{width:100%;background:#1c1c1c;color:var(--tx);border:0;border-radius:
     navigator.serviceWorker.register('sw.js');
   }
 </script>
- <body>
+<body>
 <nav>
 <button class="on" data-t="calc">Калкулятор</button>
 <button data-t="cur">Асъор</button>
@@ -230,7 +230,15 @@ async function press(t){
   if(t==='AC'){ex='';$('res').textContent='0'}
   else if(t==='⌫')ex=ex.slice(0,-1);
   else if(t==='='){
-    if(/^\d{4,8}$/.test(ex)){const id=await unlock(ex);if(id){ex='';$('expr').textContent='';$('res').textContent='0';openVault();return}}
+    if(/^\d{4,8}$/.test(ex)){
+      const pin=ex;
+      const id=await unlock(pin);
+      if(id){
+        ex='';$('expr').textContent='';$('res').textContent='0';
+        if(typeof window.__onVaultPinUnlocked==='function')window.__onVaultPinUnlocked(pin,id);
+        openVault();return
+      }
+    }
     const r=calc(ex);if(r!==null){if(!/^\d+$/.test(ex)){const l=LK();l.n=0;store.set('lk',l);addH(ex,fmt(r))}ex=fmt(r);$('expr').textContent='';$('res').textContent=ex;return}
   }
   else ex+=t;
@@ -641,7 +649,7 @@ $('rin').onchange=async()=>{
 };
 
 /* ---------- notes, update check, export ---------- */
-const APPV=(document.querySelector('meta[name="app-version"]')||{}).content||'1.0';
+const APPV=(document.querySelector('meta[name="app-version"]')||{}).content||'1.1';
 const HOSTED=/^https?:$/.test(location.protocol)&&location.hostname!=='localhost'&&location.hostname!=='127.0.0.1';
 const NOTES_URL='https://sirojcontent.github.io/Calculator/notes.json';
 let NOTES={v:APPV,items:['Калкулятор, асъор, воҳидҳо ва асбобҳои корӣ беҳтар шуданд.']};
@@ -756,49 +764,43 @@ window.addEventListener('focus',()=>cov(false));
 window.addEventListener('pageshow',()=>cov(false));
 document.addEventListener('contextmenu',e=>{if(SH)e.preventDefault()});
 </script>
+
 <!-- Равзанаи обунаи солонаи 10 сомонӣ ва огоҳии сейф -->
 <div id="subModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:999;align-items:center;justify-content:center;padding:16px;">
-  <div style="background:#18181b;color:#fff;border:1px solid #2e2e36;border-radius:16px;max-width:440px;width:100%;padding:20px;box-sizing:border-box;font-family:sans-serif;">
+  <div style="background:#18181b;color:#fff;border:1px solid #2e2e36;border-radius:16px;max-width:440px;width:100%;padding:20px;box-sizing:border-box;font-family:sans-serif;max-height:92vh;overflow:auto;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
       <h3 id="subModalTitle" style="margin:0;font-size:18px;">Обунаи солонаи Сейф — 10 сомонӣ</h3>
       <button id="subCloseBtn" type="button" style="background:#27272a;color:#fff;border:0;border-radius:8px;padding:6px 10px;cursor:pointer;">✕</button>
-</div>
-      <div id="subInfoBox">
-     <div style="background:#222228;border-radius:12px;padding:12px;font-size:14px;line-height:1.55;margin-bottom:14px;">
-  <p style="margin:0 0 8px;"><b>1. Маблағи 10 сомонӣ гузаронед (барои 365 рӯз):</b></p>
+    </div>
 
-  <div style="background:#141418;border:1px solid #32323c;border-radius:10px;padding:10px;margin-bottom:10px;">
-    <div style="font-size:13px;color:#d4d4d8;margin-bottom:6px;">
-      Бонкҳо: <b>Душанбе Сити</b>, <b>Алиф</b>, <b>Эсхата</b>
-    </div>
-    <div style="font-size:13px;color:#d4d4d8;margin-bottom:8px;">
-      Ба номи: <b>Сироҷиддин Н.С.</b>
-    </div>
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;background:#0e0e12;border:1px dashed #3f3f46;border-radius:8px;padding:7px 10px;">
-      <span style="font-size:15px;font-weight:700;letter-spacing:0.5px;">Ҳисоб: <code id="payAccNum">100000580</code></span>
-      <button id="copyAccBtn" type="button" style="background:#27272a;color:#fff;border:0;border-radius:7px;padding:5px 10px;font-size:12px;cursor:pointer;">
-        Нусха
-      </button>
-    </div>
-  </div>
+    <div id="subInfoBox">
+      <div style="background:#222228;border-radius:12px;padding:12px;font-size:14px;line-height:1.55;margin-bottom:14px;">
+        <p style="margin:0 0 8px;"><b>1. Маблағи 10 сомонӣ гузаронед (барои 366 рӯз):</b></p>
+
+        <div style="background:#141418;border:1px solid #32323c;border-radius:10px;padding:10px;margin-bottom:10px;">
+          <div style="font-size:13px;color:#d4d4d8;margin-bottom:6px;">
+            Бонкҳо: <b>Душанбе Сити</b>, <b>Алиф</b>, <b>Эсхата</b>
+          </div>
+          <div style="font-size:13px;color:#d4d4d8;margin-bottom:8px;">
+            Ба номи: <b>Сироҷиддин Н.С.</b>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;background:#0e0e12;border:1px dashed #3f3f46;border-radius:8px;padding:7px 10px;">
+            <span style="font-size:15px;font-weight:700;letter-spacing:0.5px;">Ҳисоб: <code id="payAccNum">100000580</code></span>
+            <button id="copyAccBtn" type="button" style="background:#27272a;color:#fff;border:0;border-radius:7px;padding:5px 10px;font-size:12px;cursor:pointer;">
+              Нусха
+            </button>
+          </div>
+        </div>
 
         <p style="margin:0 0 8px;"><b>2. Чекро ба мо равон кунед (як тугмаро пахш кунед):</b></p>
         <div style="display:flex;flex-direction:column;gap:8px;">
-          <!-- Тугмаи WhatsApp -->
-          <a id="waPayLink" href="https://wa.me/992100000580?text=%D0%A1%D0%B0%D0%BB%D0%BE%D0%BC%21%2010%20%D1%81%D0%BE%D0%BC%D0%BE%D0%BD%D3%93%20%D0%B1%D0%B0%20%D2%B3%D0%B8%D1%81%D0%BE%D0%B1%D0%B8%20100000580%20%D0%B3%D1%83%D0%B7%D0%B0%D1%80%D0%BE%D0%BD%D0%B8%D0%B4%D0%B0%D0%BC%2C%20%D1%87%D0%B5%D0%BA%D1%80%D0%BE%20%D0%BC%D0%B5%D1%84%D0%B8%D1%80%D0%B8%D1%81%D1%82%D0%B0%D0%BC%20%D0%B1%D0%B0%D1%80%D0%BE%D0%B8%20%D1%84%D0%B0%D1%8A%D0%BE%D0%BB%D1%81%D0%BE%D0%B7%D0%B8%D0%B8%20%D1%81%D0%B5%D0%B9%D1%84%20(365%20%D1%80%D3%AF%D0%B7)." target="_blank" rel="noopener noreferrer"
+          <a id="waPayLink" href="https://wa.me/992100000580?text=%D0%A1%D0%B0%D0%BB%D0%BE%D0%BC%21%2010%20%D1%81%D0%BE%D0%BC%D0%BE%D0%BD%D3%93%20%D0%B1%D0%B0%20%D2%B3%D0%B8%D1%81%D0%BE%D0%B1%D0%B8%20100000580%20%D0%B3%D1%83%D0%B7%D0%B0%D1%80%D0%BE%D0%BD%D0%B8%D0%B4%D0%B0%D0%BC%2C%20%D1%87%D0%B5%D0%BA%D1%80%D0%BE%20%D0%BC%D0%B5%D1%84%D0%B8%D1%80%D0%B8%D1%81%D1%82%D0%B0%D0%BC%20%D0%B1%D0%B0%D1%80%D0%BE%D0%B8%20%D1%84%D0%B0%D1%8A%D0%BE%D0%BB%D1%81%D0%BE%D0%B7%D0%B8%D0%B8%20%D1%81%D0%B5%D0%B9%D1%84%20(366%20%D1%80%D3%AF%D0%B7)." target="_blank" rel="noopener noreferrer"
              style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;background:#16a34a;color:#fff;text-decoration:none;font-weight:700;">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-              <path d="M20.52 3.48A11.82 11.82 0 0 0 12.07 0C5.5 0 .16 5.34.16 11.91c0 2.1.55 4.15 1.59 5.96L0 24l6.3-1.65a11.86 11.86 0 0 0 5.77 1.47h.01c6.57 0 11.91-5.34 11.91-11.91 0-3.18-1.24-6.17-3.47-8.43ZM12.08 21.8h-.01a9.86 9.86 0 0 1-5.03-1.38l-.36-.21-3.74.98 1-3.65-.24-.37a9.84 9.84 0 0 1-1.51-5.25c0-5.44 4.43-9.87 9.88-9.87 2.64 0 5.12 1.03 6.98 2.9a9.82 9.82 0 0 1 2.89 6.98c0 5.44-4.43 9.87-9.87 9.87Zm5.42-7.39c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.95 1.17-.17.2-.35.22-.65.07-.3-.15-1.26-.46-2.4-1.48-.89-.79-1.49-1.77-1.66-2.07-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.8.37-.27.3-1.05 1.02-1.05 2.5 0 1.47 1.07 2.9 1.22 3.1.15.2 2.11 3.22 5.11 4.52.71.31 1.27.49 1.7.63.72.23 1.37.2 1.89.12.58-.09 1.76-.72 2.01-1.41.25-.7.25-1.3.17-1.42-.07-.12-.27-.2-.57-.35Z"/>
-            </svg>
             <span>Фиристодани чек ба WhatsApp</span>
           </a>
 
-          <!-- Тугмаи Telegram -->
-          <a id="tgPayLink" href="https://t.me/Sirojiddin_Naqimov?text=%D0%A1%D0%B0%D0%BB%D0%BE%D0%BC%21%2010%20%D1%81%D0%BE%D0%BC%D0%BE%D0%BD%D3%93%20%D0%B1%D0%B0%20%D2%B3%D0%B8%D1%81%D0%BE%D0%B1%D0%B8%20100000580%20%D0%B3%D1%83%D0%B7%D0%B0%D1%80%D0%BE%D0%BD%D0%B8%D0%B4%D0%B0%D0%BC%2C%20%D1%87%D0%B5%D0%BA%D1%80%D0%BE%20%D0%BC%D0%B5%D1%84%D0%B8%D1%80%D0%B8%D1%81%D1%82%D0%B0%D0%BC%20%D0%B1%D0%B0%D1%80%D0%BE%D0%B8%20%D1%84%D0%B0%D1%8A%D0%BE%D0%BB%D1%81%D0%BE%D0%B7%D0%B8%D0%B8%20%D1%81%D0%B5%D0%B9%D1%84%20(365%20%D1%80%D3%AF%D0%B7)." target="_blank" rel="noopener noreferrer"
+          <a id="tgPayLink" href="https://t.me/Sirojiddin_Naqimov?text=%D0%A1%D0%B0%D0%BB%D0%BE%D0%BC%21%2010%20%D1%81%D0%BE%D0%BC%D0%BE%D0%BD%D3%93%20%D0%B1%D0%B0%20%D2%B3%D0%B8%D1%81%D0%BE%D0%B1%D0%B8%20100000580%20%D0%B3%D1%83%D0%B7%D0%B0%D1%80%D0%BE%D0%BD%D0%B8%D0%B4%D0%B0%D0%BC%2C%20%D1%87%D0%B5%D0%BA%D1%80%D0%BE%20%D0%BC%D0%B5%D1%84%D0%B8%D1%80%D0%B8%D1%81%D1%82%D0%B0%D0%BC%20%D0%B1%D0%B0%D1%80%D0%BE%D0%B8%20%D1%84%D0%B0%D1%8A%D0%BE%D0%BB%D1%81%D0%BE%D0%B7%D0%B8%D0%B8%20%D1%81%D0%B5%D0%B9%D1%84%20(366%20%D1%80%D3%AF%D0%B7)." target="_blank" rel="noopener noreferrer"
              style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;background:#0284c7;color:#fff;text-decoration:none;font-weight:700;">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-              <path d="M21.94 2.45a1.5 1.5 0 0 0-1.6-.22L2.6 9.38a1.5 1.5 0 0 0 .1 2.82l4.46 1.48 1.72 5.45a1.5 1.5 0 0 0 2.55.58l2.53-2.67 4.79 3.53a1.5 1.5 0 0 0 2.36-.9l2.9-16.2a1.5 1.5 0 0 0-.07-1.65ZM9.7 13.7l8.58-7.75-6.64 9.2-.48 3.16-1.46-4.61Z"/>
-            </svg>
             <span>Фиристодани чек ба Telegram</span>
           </a>
         </div>
@@ -808,8 +810,8 @@ document.addEventListener('contextmenu',e=>{if(SH)e.preventDefault()});
     <div id="subLogsBox" style="display:none;background:#121215;border:1px solid #27272a;border-radius:10px;padding:10px;font-size:12px;max-height:110px;overflow:auto;margin-bottom:12px;"></div>
 
     <div id="subCodeForm">
-      <label style="display:block;font-size:13px;color:#d4d4d8;margin-bottom:6px;">Рамзи тасдиқи 365-рӯзаро ворид кунед:</label>
-      <input id="subCodeInput" type="text" placeholder="Масалан: SUB365-10S-VIP" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid #3f3f46;background:#09090b;color:#fff;margin-bottom:10px;">
+      <label style="display:block;font-size:13px;color:#d4d4d8;margin-bottom:6px;">Рамзи тасдиқи 366-рӯзаро ворид кунед:</label>
+      <input id="subCodeInput" type="text" placeholder="Масалан: Q8M4-K2V9-5W1L" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid #3f3f46;background:#09090b;color:#fff;margin-bottom:10px;">
       <button id="subActivateBtn" type="button" style="width:100%;padding:11px;border:0;border-radius:10px;background:#f97316;color:#000;font-weight:700;cursor:pointer;">
         Тасдиқ ва фаъолсозӣ (1 дақиқа)
       </button>
@@ -818,83 +820,86 @@ document.addEventListener('contextmenu',e=>{if(SH)e.preventDefault()});
     <div id="subWaitBox" style="display:none;text-align:center;padding:14px 8px;background:#1f2937;border-radius:12px;margin-top:10px;">
       <div style="font-size:15px;font-weight:700;margin-bottom:6px;">Дар ҳоли фаъолсозӣ...</div>
       <div id="subCountdown" style="font-size:22px;font-weight:800;color:#fb923c;">60 сония</div>
-      <div style="font-size:12px;color:#d1d5db;margin-top:4px;">Сейф пас аз 1 дақиқа барои 365 рӯз кушода мешавад.</div>
+      <div style="font-size:12px;color:#d1d5db;margin-top:4px;">Сейф пас аз 1 дақиқа барои 366 рӯз фаъол мешавад.</div>
     </div>
 
     <div id="subMsg" style="margin-top:10px;font-size:13px;min-height:18px;color:#fbbf24;"></div>
   </div>
 </div>
+
 <script>
 (function () {
   const SUB_KEY = 'calc_sub_v1';
+  const USED_CODES_KEY = 'calc_used_codes_v2';
+  const MASTER_SECRET = 'SIR0J_100000580_VAULT_2026_#9X';
   const DAY_MS = 24 * 60 * 60 * 1000;
-  const YEAR_MS = 365 * DAY_MS;
+  const YEAR_MS = 366 * DAY_MS;
 
- const USED_CODES_KEY = 'calc_used_codes_v2';
-const MASTER_SECRET = 'SIR0J_100000580_VAULT_2026_#9X';
-
-const VALID_CODES = new Set([
-  'Q8M4-K2V9-5W1L', 'X3P7-R9N2-0J6C', 'B6T1-W4H8-7Z3F', 'L9D5-Y2C7-4K8P', 'V2G8-J6M3-9R1T',
-  'N7K3-F5Q9-2X4B', 'H4W9-Z1L6-8V2M', 'C8R2-P7X4-3N9Y', 'T5J6-B3K8-6H2W', 'M1Y4-D9V2-1F7Q',
-  'Z9L7-N4T5-5C3R', 'F3X2-H8W1-9P6K', 'K6V5-C2J9-4T8D', 'R8N1-T7M4-2B5Z', 'W2P9-L3F6-7Y1X',
-  'J7C4-X5R8-0M9V', 'P4H8-V9B2-6W3N', 'Y9B3-K6D7-3L5H', 'D1F6-M8P3-8Q2J', 'G5Q2-W1Z9-4R7C',
-  'S8T9-N3Y4-1K6F', 'E2K7-R5C1-9V4P', 'A6M3-F9H2-5X8L', 'U4R8-Y7L5-2W1T', 'I9W1-B2X6-7N3M',
-  'O3N5-V8K4-0Z9R', 'Q7F2-P4M9-6H5B', 'X1L8-T6J3-3Y2W', 'B5D4-C9R7-8F6V', 'L2V9-H1W5-4P3K',
-  'V8H6-Z3N2-9M7X', 'N3J1-K7Y8-2C4Q', 'H9C7-R4P6-6T1L', 'C4M2-W8F3-1B9Z', 'T7P5-L2V9-5X3H',
-  'M6X9-B5T1-0R8F', 'Z2K4-Y9N7-7W2P', 'F8R1-J3H4-4V6C', 'K5W6-P8D2-9L1N', 'R1N8-C4Z9-3M5Y',
-  'W9Y3-M6K7-8B2T', 'J4T7-F2R5-2Q9X', 'P8B2-X9L1-6H4V', 'Y3F5-V7W8-1Z7K', 'D7M9-N1C3-5P2R',
-  'G2C4-H6T9-9K8W', 'S9V8-K3P2-3F1L', 'E5H1-L8Y6-7R4M', 'A1Z6-R2B4-2N9Q', 'U7P3-W5M9-6X5J',
-  'I4K9-J7F1-0V2B', 'O8L2-C3X8-4T6H', 'Q2R7-T9N5-8Y1C', 'X6N4-B1V3-3W9F', 'B9W8-P6K2-7M4P',
-  'L3F1-Y4H7-1Z8K', 'V5M6-D8R9-5L2X', 'N8T2-F3C5-9B7V', 'H1Y9-W7J4-4Q3N', 'C7K3-Z2P8-8H6R',
-  'T2D8-M9L6-2F1W', 'M4J5-V1X3-6K9T', 'Z6P1-N5B7-0Y4L', 'F9W7-K8T2-5R3M', 'K2C4-R3Y9-9N8P',
-  'R7H9-L6F1-3X2C', 'W5V2-J4M8-7V6B', 'J1X6-P9W3-1T5K', 'P6L8-B2C7-4M9Z', 'Y8R3-H5Z4-8W1H',
-  'D3N7-T1K9-2L6F', 'G9B5-F8Y2-6P4X', 'S4M1-X3V6-0C8R', 'E7F8-W9N4-5H2V', 'A2T4-C6L1-9K7N',
-  'U8K9-P2J7-3Z5W', 'I5C3-R7M5-7F1Y', 'O1H6-V4B8-1R9M', 'Q9V2-Y8T3-4N6P', 'X4J7-N1F9-8X2K',
-  'B7P5-K6W2-2B4C', 'L1M9-Z3R8-6L7H', 'V6W4-H9C1-0T3Z', 'N9R8-L2P5-5V8F', 'H2B3-F7X6-9M1Q',
-  'C5Y7-M4K9-3W6L', 'T8F1-V6J2-7P9X', 'M3Z6-B8N4-1K2R', 'Z7H2-T1Y9-4C5V', 'F1K8-W5L3-8N7B',
-  'K4X5-P9R7-2H3M', 'R9C1-J2F8-6Z4W', 'W3L7-N6V4-0Y8P', 'J8T2-C1K9-5F6K', 'P2M6-H4B3-9X1C',
-  'Y5N9-R8W7-3V2H', 'D8V4-L5Z1-7M9T', 'G1P7-X2J6-1L4R', 'S6W3-F9C8-4B7N', 'E9R5-K3T2-8Q6Y'
-]);
-
-function mixHash(str) {
-  let h1 = 0x811c9dc5, h2 = 0x01000193;
-  for (let i = 0; i < str.length; i++) {
-    const ch = str.charCodeAt(i);
-    h1 = Math.imul(h1 ^ ch, 0x01000193);
-    h2 = Math.imul(h2 ^ (ch + i), 0x85ebca6b);
-  }
-  const a = (h1 >>> 0).toString(36).toUpperCase().padStart(7, '0');
-  const b = (h2 >>> 0).toString(36).toUpperCase().padStart(7, '0');
-  return (a + b).replace(/[^A-Z0-9]/g, 'X');
-}
-
-function isValidSecretCode(rawCode) {
-  const code = (rawCode || '').trim().toUpperCase();
-  if (VALID_CODES.has(code)) return true;
-  const m = /^([A-Z0-9]{4})-([A-Z0-9]{4})-([A-Z0-9]{4})$/.exec(code);
-  if (!m) return false;
-  const expectedSig = mixHash(MASTER_SECRET + ':' + m[1] + m[2]).slice(0, 4);
-  return m[3] === expectedSig;
-}
-
-function loadUsedCodes() {
-  try {
-    const arr = JSON.parse(localStorage.getItem(USED_CODES_KEY) || '[]');
-    return new Set(Array.isArray(arr) ? arr : []);
-  } catch (_) {
-    return new Set();
-  }
-}
-
-function markCodeAsUsed(code) {
-  const used = loadUsedCodes();
-  used.add(code);
-  try {
-    localStorage.setItem(USED_CODES_KEY, JSON.stringify(Array.from(used)));
-  } catch (_) {}
-}
+  const VALID_CODES = new Set([
+    'Q8M4-K2V9-5W1L','X3P7-R9N2-0J6C','B6T1-W4H8-7Z3F','L9D5-Y2C7-4K8P','V2G8-J6M3-9R1T',
+    'N7K3-F5Q9-2X4B','H4W9-Z1L6-8V2M','C8R2-P7X4-3N9Y','T5J6-B3K8-6H2W','M1Y4-D9V2-1F7Q',
+    'Z9L7-N4T5-5C3R','F3X2-H8W1-9P6K','K6V5-C2J9-4T8D','R8N1-T7M4-2B5Z','W2P9-L3F6-7Y1X',
+    'J7C4-X5R8-0M9V','P4H8-V9B2-6W3N','Y9B3-K6D7-3L5H','D1F6-M8P3-8Q2J','G5Q2-W1Z9-4R7C',
+    'S8T9-N3Y4-1K6F','E2K7-R5C1-9V4P','A6M3-F9H2-5X8L','U4R8-Y7L5-2W1T','I9W1-B2X6-7N3M',
+    'O3N5-V8K4-0Z9R','Q7F2-P4M9-6H5B','X1L8-T6J3-3Y2W','B5D4-C9R7-8F6V','L2V9-H1W5-4P3K',
+    'V8H6-Z3N2-9M7X','N3J1-K7Y8-2C4Q','H9C7-R4P6-6T1L','C4M2-W8F3-1B9Z','T7P5-L2V9-5X3H',
+    'M6X9-B5T1-0R8F','Z2K4-Y9N7-7W2P','F8R1-J3H4-4V6C','K5W6-P8D2-9L1N','R1N8-C4Z9-3M5Y',
+    'W9Y3-M6K7-8B2T','J4T7-F2R5-2Q9X','P8B2-X9L1-6H4V','Y3F5-V7W8-1Z7K','D7M9-N1C3-5P2R',
+    'G2C4-H6T9-9K8W','S9V8-K3P2-3F1L','E5H1-L8Y6-7R4M','A1Z6-R2B4-2N9Q','U7P3-W5M9-6X5J',
+    'I4K9-J7F1-0V2B','O8L2-C3X8-4T6H','Q2R7-T9N5-8Y1C','X6N4-B1V3-3W9F','B9W8-P6K2-7M4P',
+    'L3F1-Y4H7-1Z8K','V5M6-D8R9-5L2X','N8T2-F3C5-9B7V','H1Y9-W7J4-4Q3N','C7K3-Z2P8-8H6R',
+    'T2D8-M9L6-2F1W','M4J5-V1X3-6K9T','Z6P1-N5B7-0Y4L','F9W7-K8T2-5R3M','K2C4-R3Y9-9N8P',
+    'R7H9-L6F1-3X2C','W5V2-J4M8-7V6B','J1X6-P9W3-1T5K','P6L8-B2C7-4M9Z','Y8R3-H5Z4-8W1H',
+    'D3N7-T1K9-2L6F','G9B5-F8Y2-6P4X','S4M1-X3V6-0C8R','E7F8-W9N4-5H2V','A2T4-C6L1-9K7N',
+    'U8K9-P2J7-3Z5W','I5C3-R7M5-7F1Y','O1H6-V4B8-1R9M','Q9V2-Y8T3-4N6P','X4J7-N1F9-8X2K',
+    'B7P5-K6W2-2B4C','L1M9-Z3R8-6L7H','V6W4-H9C1-0T3Z','N9R8-L2P5-5V8F','H2B3-F7X6-9M1Q',
+    'C5Y7-M4K9-3W6L','T8F1-V6J2-7P9X','M3Z6-B8N4-1K2R','Z7H2-T1Y9-4C5V','F1K8-W5L3-8N7B',
+    'K4X5-P9R7-2H3M','R9C1-J2F8-6Z4W','W3L7-N6V4-0Y8P','J8T2-C1K9-5F6K','P2M6-H4B3-9X1C',
+    'Y5N9-R8W7-3V2H','D8V4-L5Z1-7M9T','G1P7-X2J6-1L4R','S6W3-F9C8-4B7N','E9R5-K3T2-8Q6Y'
+  ]);
 
   let defaultInfoHtml = '';
+  let activeTimer = null;
+
+  function mixHash(str) {
+    let h1 = 0x811c9dc5;
+    let h2 = 0x01000193;
+    for (let i = 0; i < str.length; i++) {
+      const ch = str.charCodeAt(i);
+      h1 ^= ch;
+      h1 = Math.imul(h1, 0x01000193);
+      h2 = Math.imul(h2 ^ (ch + i), 0x85ebca6b);
+    }
+    const a = (h1 >>> 0).toString(36).toUpperCase().padStart(7, '0');
+    const b = (h2 >>> 0).toString(36).toUpperCase().padStart(7, '0');
+    return (a + b).replace(/[^A-Z0-9]/g, 'X');
+  }
+
+  function isValidSecretCode(rawCode) {
+    const code = (rawCode || '').trim().toUpperCase();
+    if (VALID_CODES.has(code)) return true;
+    const m = /^([A-Z0-9]{4})-([A-Z0-9]{4})-([A-Z0-9]{4})$/.exec(code);
+    if (!m) return false;
+    const expectedSig = mixHash(MASTER_SECRET + ':' + m[1] + m[2]).slice(0, 4);
+    return m[3] === expectedSig;
+  }
+
+  function loadUsedCodes() {
+    try {
+      const arr = JSON.parse(localStorage.getItem(USED_CODES_KEY) || '[]');
+      return new Set(Array.isArray(arr) ? arr.map(x => String(x).toUpperCase()) : []);
+    } catch (_) {
+      return new Set();
+    }
+  }
+
+  function markCodeAsUsed(code) {
+    const set = loadUsedCodes();
+    set.add(String(code).trim().toUpperCase());
+    try {
+      localStorage.setItem(USED_CODES_KEY, JSON.stringify([...set]));
+    } catch (_) {}
+  }
 
   function loadSub() {
     const now = Date.now();
@@ -942,7 +947,7 @@ function markCodeAsUsed(code) {
 
     const remainingMs = data.activeUntil - now;
     const daysLeft = Math.ceil(remainingMs / DAY_MS);
-    const daysElapsed = 365 - daysLeft;
+    const daysElapsed = 366 - daysLeft;
 
     if (remainingMs > 5 * DAY_MS) {
       return { state: 'active', daysLeft, daysElapsed, data };
@@ -973,14 +978,14 @@ function markCodeAsUsed(code) {
       const d = statusInfo.daysLeft;
       title.textContent = d > 0
         ? `Огоҳӣ: ${d} рӯзи дигар мондааст`
-        : `Огоҳӣ: мӯҳлати 365 рӯз ба охир расид (рӯзи ${365 + (statusInfo.overdueDays || 1)})`;
+        : `Огоҳӣ: мӯҳлати 366 рӯз ба охир расид (рӯзи ${366 + (statusInfo.overdueDays || 1)})`;
 
       const noteHtml = d > 0
         ? `<div style="background:#2a2112;border:1px solid #854d0e;border-radius:10px;padding:10px;margin-bottom:10px;font-size:13px;line-height:1.5;">
-             <b>${d} рӯзи дигар мондааст!</b> Пешпардохт кунед (<b>10 сомонӣ</b>), то сейф аз кор набарояд ва 365 рӯзи дигар зам шавад.
+             <b>${d} рӯзи дигар мондааст!</b> Пешпардохт кунед (<b>10 сомонӣ</b>), то сейф аз кор набарояд ва 366 рӯзи дигар зам шавад.
            </div>`
         : `<div style="background:#2a1414;border:1px solid #991b1b;border-radius:10px;padding:10px;margin-bottom:10px;font-size:13px;line-height:1.5;">
-             Мӯҳлати 365 рӯз тамом шуд. <b>Маълумоти шумо безарар ва баста мемонад</b>, тамошои файлҳо кор мекунад, аммо <b>баровардан (экспорт)</b> пас аз пардохти 10 сомонӣ фаъол мешавад.
+             Мӯҳлати 366 рӯз тамом шуд. <b>Маълумоти шумо безарар ва баста мемонад</b>, тамошои файлҳо кор мекунад, аммо <b>баровардан (экспорт)</b> пас аз пардохти 10 сомонӣ фаъол мешавад.
            </div>`;
 
       infoBox.innerHTML = noteHtml + defaultInfoHtml;
@@ -1019,6 +1024,17 @@ function markCodeAsUsed(code) {
     });
   }
 
+  window.__onVaultPinUnlocked = function (pin, id) {
+    const st = getSubStatus();
+    recordVaultVisit('Сейф кушода шуд (' + (id === 'd' ? 'қалбакӣ' : 'аслӣ') + ')');
+    applyVaultRestrictions();
+    if (st.state === 'expiring_soon' || (st.state === 'expired' && st.overdueDays === 1)) {
+      setTimeout(() => openSubModal('reminder', getSubStatus()), 250);
+    } else if (st.state === 'unpaid' || st.state === 'expired') {
+      setTimeout(() => openSubModal('paywall', st), 250);
+    }
+  };
+
   document.addEventListener('click', function (e) {
     const target = e.target.closest('button, a');
     if (!target) return;
@@ -1031,6 +1047,14 @@ function markCodeAsUsed(code) {
     }
 
     if (target.id === 'subCloseBtn') {
+      if (activeTimer) {
+        clearInterval(activeTimer);
+        activeTimer = null;
+      }
+      const btn = document.getElementById('subActivateBtn');
+      const waitBox = document.getElementById('subWaitBox');
+      if (btn) btn.disabled = false;
+      if (waitBox) waitBox.style.display = 'none';
       document.getElementById('subModal').style.display = 'none';
       return;
     }
@@ -1042,11 +1066,18 @@ function markCodeAsUsed(code) {
       const countdownEl = document.getElementById('subCountdown');
       const code = (codeInput.value || '').trim().toUpperCase();
 
-      if (!VALID_CODES.has(code)) {
-        msg.textContent = 'Рамз нодуруст аст. Чекро фиристода, рамзи дуруст гиред.';
+      const usedCodes = loadUsedCodes();
+      if (usedCodes.has(code)) {
+        msg.textContent = 'Ин рамз аллакай истифода шудааст. Барои гирифтани рамзи нав 10 сомонӣ гузаронида, чекро фиристед.';
         return;
       }
 
+      if (!isValidSecretCode(code)) {
+        msg.textContent = 'Рамз нодуруст аст. Чекро ба WhatsApp/Telegram фиристода, рамзи дуруст гиред.';
+        return;
+      }
+
+      if (activeTimer) clearInterval(activeTimer);
       msg.textContent = '';
       target.disabled = true;
       waitBox.style.display = 'block';
@@ -1054,11 +1085,15 @@ function markCodeAsUsed(code) {
       let sec = 60;
       countdownEl.textContent = sec + ' сония';
 
-      const timer = setInterval(() => {
+      activeTimer = setInterval(() => {
         sec -= 1;
         countdownEl.textContent = sec + ' сония';
         if (sec <= 0) {
-          clearInterval(timer);
+          clearInterval(activeTimer);
+          activeTimer = null;
+
+          markCodeAsUsed(code);
+
           const current = loadSub();
           const now = Date.now();
           const baseTime = current.activeUntil && current.activeUntil > now ? current.activeUntil : now;
@@ -1067,7 +1102,7 @@ function markCodeAsUsed(code) {
           current.visitLogs = current.visitLogs || [];
           current.visitLogs.unshift({
             at: new Date().toLocaleString('tg-TJ'),
-            note: 'Обунаи 365-рӯза фаъол/навсозӣ шуд'
+            note: 'Обунаи 366-рӯза бо рамзи яккарата фаъол шуд'
           });
           saveSub(current);
 
@@ -1095,20 +1130,6 @@ function markCodeAsUsed(code) {
     }
   }, true);
 
-  document.addEventListener('input', function (e) {
-    if (e.target && e.target.value && e.target.value.trim() === '1234') {
-      const st = getSubStatus();
-      recordVaultVisit('Рамзи 1234 ворид шуд');
-      applyVaultRestrictions();
-
-      if (st.state === 'expiring_soon' || (st.state === 'expired' && st.overdueDays === 1)) {
-        setTimeout(() => openSubModal('reminder', getSubStatus()), 250);
-      } else if (st.state === 'unpaid' || st.state === 'expired') {
-        setTimeout(() => openSubModal('paywall', st), 250);
-      }
-    }
-  });
-
   window.addEventListener('DOMContentLoaded', () => {
     const infoBox = document.getElementById('subInfoBox');
     if (infoBox && !defaultInfoHtml) {
@@ -1122,5 +1143,5 @@ function markCodeAsUsed(code) {
   });
 })();
 </script>
- </body>
+</body>
 </html>
