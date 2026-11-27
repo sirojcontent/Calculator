@@ -1,4 +1,4 @@
-const CACHE_NAME = 'calc-v1';
+const CACHE_NAME = 'calc-v13';
 const urlsToCache = [
   '/Calculator/',
   '/Calculator/index.html',
